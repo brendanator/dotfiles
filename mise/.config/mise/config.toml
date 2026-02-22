@@ -1,0 +1,58 @@
+[tools]
+"cargo:jj-cli" = "latest"
+"npm:@e2b/cli" = "latest"
+"npm:@google/gemini-cli" = "latest"
+"npm:@mermaid-js/mermaid-cli" = "latest"
+"npm:@openai/codex" = "latest"
+"npm:@sourcegraph/amp" = "latest"
+"npm:@steipete/summarize" = "latest"
+"npm:cloc" = "latest"
+"npm:prettier" = "latest"
+"npm:task-master-ai" = "latest"
+"npm:vibe-kanban" = "latest"
+"pipx:aider-chat" = "latest"
+"pipx:black" = "latest"
+"pipx:llm" = "latest"
+"pipx:pipenv" = "latest"
+"pipx:poetry" = "latest"
+"pipx:pre-commit" = "latest"
+"pipx:token-count" = "latest"
+"pipx:twine" = "latest"
+atuin = "latest"
+age = "latest"
+babashka = "latest"
+cargo-binstall = "latest"
+fnox = "latest"
+go = "latest"
+gradle = "latest"
+hcloud = "latest"
+java = "latest"
+jjui = "latest"
+jq = "latest"
+make = "latest"
+node = "lts"
+prek = "latest"
+python = "latest"
+ripgrep = "latest"
+rust = "latest"
+starship = "latest"
+tiny = "latest"
+usage = "latest"
+uv = "latest"
+yarn = "latest"
+zoxide = "latest"
+
+[settings]
+experimental = true
+trusted_config_paths = ["/Users/brendan/sourcery-ai/core"]
+idiomatic_version_file_enable_tools = ["python"]
+
+[settings.pipx]
+uvx = true
+
+[settings.python]
+compile = false
+
+[env]
+PIPENV_VENV_IN_PROJECT = 0
+PYTHONPYCACHEPREFIX = "{{ xdg_cache_home }}/pycache{{ cwd }}"

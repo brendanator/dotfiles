@@ -1,0 +1,13 @@
+# Secrets
+*.pem
+*.key
+**/hosts.yml
+**/auth.yaml
+**/.git-credentials
+
+# OS
+.DS_Store
+
+# Editor
+*.swp
+*~

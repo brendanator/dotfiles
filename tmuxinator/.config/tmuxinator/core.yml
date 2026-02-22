@@ -1,0 +1,17 @@
+# ~/.tmuxinator/core.yml
+
+name: core
+root: ~/sourcery-ai/core
+
+startup_window: zsh
+
+windows:
+  - editor: vim
+  - shell:
+      layout: even-horizontal
+      panes:
+        - make database
+        - status:
+          - git fetch
+          - git status
+          - gh pr status

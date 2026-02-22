@@ -1,0 +1,8 @@
+gui:
+  showDivergenceFromBaseBranch: arrowAndNumber
+
+customCommands:
+  - key: "v"
+    context: "localBranches"
+    command: "gh pr view {{.SelectedLocalBranch.Name}} --web"
+    description: "Open PR in browser"

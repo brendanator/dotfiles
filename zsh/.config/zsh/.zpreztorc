@@ -1,0 +1,79 @@
+#
+# Sets Prezto options.
+#
+
+#
+# General
+#
+
+# Color output (auto set to 'no' on dumb terminals).
+zstyle ':prezto:*:*' color 'yes'
+
+# Set the Prezto modules to load (browse modules).
+# The order matters.
+zstyle ':prezto:load' pmodule \
+  'environment' \
+  'terminal' \
+  'editor' \
+  'history' \
+  'completion' \
+  'utility' \
+  'autosuggestions' \
+  'git' \
+  'ssh' \
+  'syntax-highlighting'
+
+#
+# Completions
+#
+zstyle ':completion:*' accept-exact '*(N)'
+zstyle ':completion:*' accept-exact-dirs true
+zstyle ':completion:*' users
+
+#
+# Editor
+#
+
+# Set the key mapping style to 'emacs' or 'vi'.
+zstyle ':prezto:module:editor' key-bindings 'vi'
+
+#
+# Git
+#
+
+zstyle ':prezto:module:git:log:oneline' format '%C(auto)%h %s%d %C(blue bold)%aN'
+zstyle ':prezto:module:git:log:brief'   format '%C(auto)%h %s%d%n%C(green)%ar %C(reset)by %C(blue bold)%aN'
+zstyle ':prezto:module:git:log:medium'  format '%C(bold)Commit:%C(auto) %H%d%n%C(bold)Author:%C(reset) %C(blue bold)%aN <%aE>%n%C(bold)Date:%C(reset)   %C(green)%ai (%ar)%C(reset)%n%+B'
+
+#
+# History
+#
+
+zstyle ':prezto:module:history' histfile "${XDG_DATA_HOME}/zsh/.zhistory"
+zstyle ':prezto:module:history' histsize 100000
+zstyle ':prezto:module:history' savehist 100000
+
+#
+# SSH
+#
+
+# Set the SSH identities to load into the agent.
+zstyle ':prezto:module:ssh:load' identities '' # Add empty identity so it doesn't try to add password protected identities
+
+#
+# Syntax Highlighting
+#
+
+# Set syntax highlighters.
+zstyle ':prezto:module:syntax-highlighting' highlighters \
+  'main' \
+  'brackets' \
+  'pattern' \
+  'line' \
+  'root'
+
+# Set syntax highlighting styles.
+zstyle ':prezto:module:syntax-highlighting' styles \
+  'builtin' 'fg=blue' \
+  'command' 'fg=blue' \
+  'function' 'fg=blue'

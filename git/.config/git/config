@@ -1,0 +1,111 @@
+[advice]
+  commitBeforeMerge  = false
+  detachedHead       = false
+  pushUpdateRejected = true
+  resolveConflict    = false
+  statusHints        = false
+
+[alias]
+  clean-branches    = "!git remote update origin --prune > /dev/null && git branch -v | grep '\\[gone]' | cut -f3 -d' ' | tee | xargs git branch -D"
+  checkout-pr-head  = "!f() { git fetch origin refs/pull/$1/head:pr-head/$1; git checkout pr-head/$1 ; } ; f"
+  checkout-pr-merge = "!f() { git fetch origin refs/pull/$1/merge:pr-merge/$1; git checkout pr-merge/$1 ; } ; f"
+  ignore            = "!gi() { IFS=\",\"; curl -L -s \"https://www.gitignore.io/api/$*\" ;}; gi"
+  my                = "!git for-each-ref --format=' %(authorname) %09 %(refname)' --sort=authorname | grep \"$(git config user.name).*refs/head\" | grep -v gh-pages | cut -f2 | xargs -L1 git show -s --oneline"
+  unstage           = reset HEAD --
+  stash-show-all    = "git stash list | awk -F: '{ print \"\n\n\n\n\"; print $0; print \"\n\n\"; system(\"git stash show -p \" $1); }'"
+  sourcery = !git fetch origin sourcery/$(git rev-parse --abbrev-ref HEAD) && git merge --ff-only FETCH_HEAD && git reset HEAD^
+
+
+[color "status"]
+  added     = green bold
+  changed   = yellow bold
+  untracked = red bold
+
+[core]
+  excludesfile = ~/.config/git/ignore
+  trustctime   = false
+  ; fsmonitor    = true
+
+[commit]
+  verbose = true
+
+[diff]
+  algorithm = histogram
+  colormoved = default
+  colormovedws = allow-indentation-change
+  tool      = vimdiff
+
+[difftool]
+  prompt = false
+
+[difftool "vimdiff"]
+  path          = nvim
+  trustExitCode = true
+  cmd = nvim -f -d -c \"wincmd l\" -c 'cd \"$GIT_PREFIX\"' \"$LOCAL\" \"$REMOTE\"
+
+[help]
+  autocorrect = prompt
+
+[log]
+  mailmap = true
+
+[mailmap]
+  file = ~/.config/git/mailmap
+
+[merge]
+  conflictstyle = zdiff3
+  tool          = vimdiff
+
+[mergetool]
+  keepBackup = false
+
+[mergetool "vimdiff"]
+  path          = nvim
+  prompt        = false
+  trustExitCode = true
+
+[push]
+  default = simple
+  autoSetupRemote = true
+
+[rebase]
+  autosquash = true
+  autostash  = true
+  updateRefs = true
+
+[rerere]
+  # Reuse recorded resolution of conflicted merges
+  enabled = true
+
+[status]
+  branch = true
+
+[url "git@bitbucket.org:"]
+  insteadOf = bb:
+
+[url "git@git.bren.dance:"]
+  insteadOf = bd:
+
+[url "git@github.com:"]
+  insteadOf = gh:
+
+[user]
+	name = Brendan Maginnis
+  email = brendan.maginnis@gmail.com
+
+[tig]
+  refresh-mode = auto
+
+[includeIf "gitdir:~/projects/salesape"]
+  path = ~/.config/git/config-salesape
+[includeIf "gitdir:~/sourcery-ai/"]
+  path = ~/.config/git/config-sourcery
+[includeIf "gitdir:~/projects/shadowplate/"]
+  path = ~/.config/git/config-shadowplate
+[fetch]
+	prune = true
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

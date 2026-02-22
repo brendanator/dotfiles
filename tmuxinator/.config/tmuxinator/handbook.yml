@@ -1,0 +1,17 @@
+# ~/.tmuxinator/handbook.yml
+
+name: handbook
+root: ~/sourcery-ai/handbook/
+
+startup_window: zsh
+
+windows:
+  - editor: vim
+  - shell:
+      layout: even-horizontal
+      panes:
+        - make dev
+        - status:
+          - git fetch
+          - git status
+          - gh pr status

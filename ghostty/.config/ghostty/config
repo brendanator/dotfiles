@@ -1,0 +1,20 @@
+# https://ghostty.org/docs/config
+
+# TODO: Report bug - first test out when tmux is not running
+# 1. Start tmux
+# 2. Close ghostty
+# 3. Start ghostty
+# 4. Full screen ghostty on macOS
+# 5. Run `tmux attach` and tmux size is the original window before full screen
+
+
+# vim: ft=conf
+keybind = shift+enter=text:\x1b\r
+keybind = super+h=goto_split:left
+keybind = super+j=goto_split:bottom
+keybind = super+k=goto_split:top
+keybind = super+l=goto_split:right
+keybind = super+shift+h=new_split:left
+keybind = super+shift+j=new_split:down
+keybind = super+shift+k=new_split:up
+keybind = super+shift+l=new_split:right

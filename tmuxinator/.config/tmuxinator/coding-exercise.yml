@@ -1,0 +1,13 @@
+# ~/.tmuxinator/coding-exercise.yml
+
+name: coding-exercise
+root: ~/sourcery-ai/coding_exercise
+
+startup_window: zsh
+
+windows:
+  - editor: vim
+  - shell:
+      layout: even-horizontal
+      panes:
+        - git fetch

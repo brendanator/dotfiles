@@ -1,0 +1,22 @@
+# Enable vi-style keybindings
+bind -v
+
+# Keep TAB completion working (libedit uses ^I for Tab)
+bind ^I rl_complete
+
+# History navigation (Ctrl-P / Ctrl-N)
+bind ^P ed-search-prev-history
+bind ^N ed-search-next-history
+
+# Show vi mode in the prompt
+# Insert mode: [I], Command mode: [N]
+set showmode on
+set vi-ins-mode-string "[I] "
+set vi-cmd-mode-string "[N] "
+
+# (Optional) case-insensitive completion
+set completion-ignore-case on
+
+# (Optional) nicer bell behavior
+set bell-style visible
+

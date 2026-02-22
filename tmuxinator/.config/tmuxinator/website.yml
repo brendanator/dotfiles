@@ -1,0 +1,16 @@
+# ~/.tmuxinator/website.yml
+
+name: website
+root: ~/sourcery-ai/website/
+
+startup_window: zsh
+
+windows:
+  - editor: vim
+  - zsh:
+      layout: even-horizontal
+      panes:
+        - npm start
+        - status:
+          - git status 
+          - gh pr status
