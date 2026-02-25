@@ -26,11 +26,12 @@ fi
 cd "$DOTFILES"
 git submodule update --init --recursive
 
-# Stow all packages
+# Stow all packages (--adopt absorbs existing files, then we restore repo versions)
 echo "Stowing packages..."
 for dir in */; do
-  stow -v "$dir" 2>&1 || echo "WARN: failed to stow $dir"
+  stow --adopt -v "$dir" 2>&1 || echo "WARN: failed to stow $dir"
 done
+git checkout .
 
 # Install mise tools
 echo "Installing tools via mise..."

@@ -5,7 +5,7 @@ Personal config managed with [GNU Stow](https://www.gnu.org/software/stow/).
 ## Install
 
 ```bash
-git clone --recursive git@github.com:brendanator/dotfiles.git ~/.dotfiles
+git clone --recursive https://github.com/brendanator/dotfiles.git ~/.dotfiles
 ~/.dotfiles/setup.sh
 ```
 
