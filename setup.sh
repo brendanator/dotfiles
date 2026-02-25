@@ -12,14 +12,12 @@ if ! command -v mise &>/dev/null; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Install stow
-if ! command -v stow &>/dev/null; then
-  echo "Installing stow..."
-  if [[ "$(uname)" == "Darwin" ]]; then
-    brew install stow
-  else
-    sudo apt-get install -y stow
-  fi
+# Install stow and zsh
+if [[ "$(uname)" == "Darwin" ]]; then
+  command -v stow &>/dev/null || brew install stow
+  command -v zsh &>/dev/null || brew install zsh
+else
+  sudo apt-get install -y stow zsh
 fi
 
 # Init submodules (prezto)
@@ -36,5 +34,11 @@ git checkout .
 # Install mise tools
 echo "Installing tools via mise..."
 mise install
+
+# Set zsh as default shell
+if [[ "$SHELL" != */zsh ]]; then
+  echo "Changing default shell to zsh..."
+  chsh -s "$(which zsh)"
+fi
 
 echo "Done. Open a new terminal to verify."
