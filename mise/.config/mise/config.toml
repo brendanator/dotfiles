@@ -10,7 +10,6 @@
 "npm:prettier" = "latest"
 "npm:task-master-ai" = "latest"
 "npm:vibe-kanban" = "latest"
-"pipx:aider-chat" = "latest"
 "pipx:black" = "latest"
 "pipx:llm" = "latest"
 "pipx:pipenv" = "latest"
@@ -46,6 +45,8 @@ zoxide = "latest"
 experimental = true
 trusted_config_paths = ["/Users/brendan/sourcery-ai/core"]
 idiomatic_version_file_enable_tools = ["python"]
+env_cache = true
+quiet = false
 
 [settings.pipx]
 uvx = true
