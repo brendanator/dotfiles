@@ -4,7 +4,6 @@
 "npm:@google/gemini-cli" = "latest"
 "npm:@mermaid-js/mermaid-cli" = "latest"
 "npm:@openai/codex" = "latest"
-"npm:@sourcegraph/amp" = "latest"
 "npm:@steipete/summarize" = "latest"
 "npm:cloc" = "latest"
 "npm:prettier" = "latest"
@@ -40,6 +39,7 @@ usage = "latest"
 uv = "latest"
 yarn = "latest"
 zoxide = "latest"
+lazygit = "latest"
 
 [settings]
 experimental = true

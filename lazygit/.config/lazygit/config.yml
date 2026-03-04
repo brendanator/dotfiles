@@ -1,5 +1,6 @@
 gui:
   showDivergenceFromBaseBranch: arrowAndNumber
+  mouseEvents: false
 
 customCommands:
   - key: "v"
