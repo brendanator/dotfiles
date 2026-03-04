@@ -11,13 +11,6 @@ source "${ZDOTDIR}/.zprezto/init.zsh"
 
 unsetopt nomatch
 
-# Aliases
-if [[ $(uname) == 'Darwin' ]]; then
-  alias htop="tmux neww 'TERM=xterm htop'"
-  alias tig="TERM=xterm tig"
-  alias t="tmux neww 'TERM=xterm tig status'"
-fi
-
 alias ls=eza
 alias m='make'
 alias mp='MISE_ENV=prod mise exec --'
@@ -48,15 +41,6 @@ for keymap in viins vicmd; do
   bindkey -M "$keymap" '^[f' forward-word
 done
 
-# CUDA (Linux devboxes)
-if [ -d "/usr/local/cuda-10.2/bin/" ]; then
-  export PATH=/usr/local/cuda-10.2/bin${PATH:+:${PATH}}
-  export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-fi
-
-# VS Code
-export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-
 # mise
 eval "$(mise activate zsh)"
 source <(mise completion zsh)
@@ -72,3 +56,8 @@ eval "$(zoxide init zsh)"
 
 fpath+=~/.zfunc
 zstyle ':completion:*' menu select
+
+# macOS
+if [[ "$OSTYPE" == darwin* ]]; then
+  source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+fi
