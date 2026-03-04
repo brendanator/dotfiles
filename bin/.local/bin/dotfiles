@@ -12,6 +12,11 @@ usage() {
 
 cmd_pull() {
   git -C "$DOTFILES" pull --rebase
+  cd "$DOTFILES"
+  for dir in */; do
+    stow --adopt "$dir" 2>&1 || echo "WARN: failed to stow $dir"
+  done
+  git checkout .
 }
 
 cmd_push() {
