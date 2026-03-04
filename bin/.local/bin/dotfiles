@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
+
+usage() {
+  echo "Usage: dotfiles <pull|push>"
+  echo "  pull   Pull latest changes"
+  echo "  push   Auto-commit and push local changes"
+  exit 1
+}
+
+cmd_pull() {
+  git -C "$DOTFILES" pull --rebase
+}
+
+cmd_push() {
+  cd "$DOTFILES"
+
+  if git diff --quiet && git diff --cached --quiet; then
+    echo "No changes to push."
+    return
+  fi
+
+  git add -A
+  git commit -m "Update dotfiles"
+  git push || {
+    echo "Push failed, rebasing..."
+    git pull --rebase
+    git push
+  }
+}
+
+case "${1:-}" in
+  pull)  cmd_pull ;;
+  push)  cmd_push ;;
+  *)     usage ;;
+esac
