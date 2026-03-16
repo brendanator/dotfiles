@@ -8,6 +8,12 @@
 # OS
 .DS_Store
 
+# Zsh
+**/.zcompdump
+**/.zcompdump-*
+**/.zsh_history
+**/.zsh_sessions
+
 # Editor
 *.swp
 *~
