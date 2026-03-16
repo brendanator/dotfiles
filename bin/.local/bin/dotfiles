@@ -22,13 +22,16 @@ cmd_pull() {
 cmd_push() {
   cd "$DOTFILES"
 
-  if git diff --quiet && git diff --cached --quiet; then
-    echo "No changes to push."
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    git add -A
+    git commit -m "Update dotfiles"
+  fi
+
+  if [ -z "$(git log @{u}..HEAD 2>/dev/null)" ]; then
+    echo "Nothing to push."
     return
   fi
 
-  git add -A
-  git commit -m "Update dotfiles"
   git push || {
     echo "Push failed, rebasing..."
     git pull --rebase
