@@ -189,7 +189,7 @@
                         ]
                     },
                     {
-                        "description": "Spacebar to enter/backspace",
+                        "description": "Spacebar to enter/backspace, shift+space to alt+enter (newline in CLI agents)",
                         "manipulators": [
                             {
                                 "from": {
@@ -207,7 +207,25 @@
                                 "to": [
                                     {
                                         "key_code": "return_or_enter",
-                                        "modifiers": ["shift"]
+                                        "modifiers": ["option"]
+                                    }
+                                ],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Shift+Enter to Alt+Enter (newline in CLI agents)",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "return_or_enter",
+                                    "modifiers": { "mandatory": ["shift"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "return_or_enter",
+                                        "modifiers": ["option"]
                                     }
                                 ],
                                 "type": "basic"
