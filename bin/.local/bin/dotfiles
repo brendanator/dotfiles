@@ -4,9 +4,10 @@ set -euo pipefail
 DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
 
 usage() {
-  echo "Usage: dotfiles <pull|push>"
+  echo "Usage: dotfiles <pull|push|diff>"
   echo "  pull   Pull latest changes"
   echo "  push   Auto-commit and push local changes"
+  echo "  diff   Show uncommitted changes"
   exit 1
 }
 
@@ -39,8 +40,13 @@ cmd_push() {
   }
 }
 
+cmd_diff() {
+  git -C "$DOTFILES" diff
+}
+
 case "${1:-}" in
   pull)  cmd_pull ;;
   push)  cmd_push ;;
+  diff)  cmd_diff ;;
   *)     usage ;;
 esac

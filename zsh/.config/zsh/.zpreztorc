@@ -24,6 +24,12 @@ zstyle ':prezto:load' pmodule \
   'syntax-highlighting'
 
 #
+# Utility
+#
+
+zstyle ':prezto:module:utility' safe-ops 'no'
+
+#
 # Completions
 #
 zstyle ':completion:*' accept-exact '*(N)'

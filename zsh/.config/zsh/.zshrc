@@ -13,6 +13,7 @@ unsetopt nomatch
 
 alias ls=eza
 alias m='make'
+alias mr='mise run'
 alias mp='MISE_ENV=prod mise exec --'
 alias rg='rg --smart-case --hidden'
 if type nvim > /dev/null 2>&1; then
