@@ -55,6 +55,17 @@ eval "$(atuin init zsh)"
 # Zoxide directory jumper
 eval "$(zoxide init zsh)"
 
+# Auto-pull dotfiles (background, once every 4 hours)
+() {
+  local stamp="${DOTFILES:-$HOME/.dotfiles}/.state/last-pull"
+  local now=$(date +%s)
+  local last=0
+  [[ -f "$stamp" ]] && last=$(<"$stamp")
+  if (( now - last > 14400 )); then
+    { dotfiles pull && echo "$now" > "$stamp" } &>/dev/null &!
+  fi
+}
+
 fpath+=~/.zfunc
 zstyle ':completion:*' menu select
 
