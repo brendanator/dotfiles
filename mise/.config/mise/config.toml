@@ -45,7 +45,6 @@ zoxide = "latest"
 
 [settings]
 experimental = true
-trusted_config_paths = ["/Users/brendan/sourcery-ai/core"]
 idiomatic_version_file_enable_tools = ["python"]
 env_cache = true
 quiet = false

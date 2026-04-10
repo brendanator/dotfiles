@@ -27,6 +27,7 @@ git submodule update --init --recursive
 # Stow all packages (--adopt absorbs existing files, then we restore repo versions)
 echo "Stowing packages..."
 for dir in */; do
+  [[ "$dir" == "docs/" ]] && continue
   stow --adopt -v "$dir" 2>&1 || echo "WARN: failed to stow $dir"
 done
 git checkout .

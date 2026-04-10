@@ -17,6 +17,9 @@
 # State
 .state/
 
+# Local docs/plans (not dotfiles)
+docs/
+
 # Editor
 *.swp
 *~
