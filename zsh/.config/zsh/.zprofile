@@ -43,8 +43,10 @@ fpath=(
 
 # Set the the list of directories that cd searches.
 cdpath=(
-  ~/projects
-  ~/sourcery-ai
+  ~/code
+  ~/code/sourcery-ai
+  ~/code/brendanator
+  ~/code/third-party
   $cdpath
 )
 
