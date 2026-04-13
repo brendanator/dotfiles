@@ -44,7 +44,6 @@ done
 
 # mise
 eval "$(mise activate zsh)"
-source <(mise completion zsh)
 
 # Starship prompt
 eval "$(starship init zsh)"
