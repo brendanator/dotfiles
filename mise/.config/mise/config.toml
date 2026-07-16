@@ -2,10 +2,10 @@
 1password-cli = "latest"
 age = "latest"
 atuin = "latest"
-"github:aldanial/cloc" = "latest"
+"github:aldanial/cloc" = "v2.08"
 cargo-binstall = "latest"
 codex = "latest"
-eza = "latest"
+eza = "0.23.4"
 fnox = "latest"
 hcloud = "latest"
 jq = "latest"
@@ -16,6 +16,7 @@ starship = "latest"
 tiny = "latest"
 usage = "latest"
 zoxide = "latest"
+node = "lts"
 
 [settings]
 experimental = true
