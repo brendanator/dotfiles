@@ -11,9 +11,9 @@ git clone --recursive https://github.com/brendanator/dotfiles.git ~/.dotfiles
 
 ## Packages
 
-atuin, bash, direnv, gh, ghostty, git, graphite, karabiner,
-lazygit, mise, nvim, pgcli, readline, ripgrep, starship,
-tmux, tmuxinator, zed, zsh
+atuin, bash, bin, bun, claude, direnv, gh, ghostty, git,
+graphite, karabiner, lazygit, mise, npm, nvim, pgcli, pnpm,
+readline, ripgrep, starship, tmux, tmuxinator, uv, zed, zsh
 
 ## Usage
 

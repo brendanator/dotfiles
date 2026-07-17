@@ -17,6 +17,7 @@ tiny = "latest"
 usage = "latest"
 zoxide = "latest"
 node = "lts"
+uv = "latest"
 
 [settings]
 experimental = true
