@@ -29,7 +29,16 @@ cmd_push() {
     git commit -m "Update dotfiles"
   fi
 
-  if [ -z "$(git log @{u}..HEAD 2>/dev/null)" ]; then
+  # If the branch has no upstream (e.g. after a history rewrite dropped tracking),
+  # push with -u to establish it. Don't treat a missing upstream as "nothing to push".
+  if ! git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+    branch="$(git branch --show-current)"
+    echo "No upstream for '$branch'; pushing with -u."
+    git push -u origin "$branch"
+    return
+  fi
+
+  if [ -z "$(git rev-list '@{u}..HEAD')" ]; then
     echo "Nothing to push."
     return
   fi
