@@ -4,6 +4,7 @@
 **/hosts.yml
 **/auth.yaml
 **/.git-credentials
+**/graphite/user_config
 
 # OS
 .DS_Store
