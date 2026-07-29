@@ -18,6 +18,7 @@ usage = "latest"
 zoxide = "latest"
 node = "lts"
 uv = "latest"
+fzf = "latest"
 
 [settings]
 experimental = true
