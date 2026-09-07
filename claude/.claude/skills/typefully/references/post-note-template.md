@@ -7,9 +7,12 @@ One note per post in `~/notes/2-projects/social/posts/`, named `<target date> <s
 ---
 title: Short internal title       # Typefully draft title, never posted
 status: drafting                  # drafting → ready → scheduled → published (status/log update it)
-theme: Slop                       # optional, from seed-themes
+theme: Harness and verification loops   # optional, from seed-themes
 typefully-draft:                  # written back by `post create`
 typefully-media:                  # file=id per image, written back after upload
+published-at:                     # ISO timestamp, written by `post status` after publishing
+linkedin-url:                     # written by `post status`
+x-url:                            # written by `post status`
 ---
 
 ## LinkedIn

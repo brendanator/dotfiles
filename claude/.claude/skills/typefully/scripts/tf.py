@@ -220,7 +220,7 @@ def post_status(a):
         die("note has no draft id")
     out = post_status_summary(note["draft"], note)
     note["fm"]["status"] = {"draft": "ready", "scheduled": "scheduled", "published": "published"}.get(out["status"], out["status"])
-    for k in ("linkedin-url", "x-url"):
+    for k in ("published-at", "linkedin-url", "x-url"):
         if out.get(k.replace("-", "_")):
             note["fm"][k] = out[k.replace("-", "_")]
     write_note(note)
@@ -303,7 +303,7 @@ def read_note(path):
 
 def write_note(note):
     text = note["text"]
-    keys = ["typefully-draft", "typefully-media", "status", "linkedin-url", "x-url"]
+    keys = ["typefully-draft", "typefully-media", "status", "published-at", "linkedin-url", "x-url"]
     if not text.startswith("---\n"):
         text = "---\n---\n" + text
     end = text.index("\n---", 4)
