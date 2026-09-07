@@ -191,11 +191,11 @@ def cmd_post(a):
 def post_create(a):
     note = read_note(a.note)
     if note["draft"]:
-        die(f"note already has draft {note['draft']}; use `post update`")
+        die(f"note already has typefully-draft {note['draft']}; use `post update`")
     media = ensure_media(note)
     body = note_body(note, media)
     r = public("POST", f"/social-sets/{social_set()}/drafts", body)
-    note["fm"]["draft"] = str(r["id"])
+    note["fm"]["typefully-draft"] = str(r["id"])
     if note["comment"]:
         set_first_comment(r["id"], note["comment"])
     write_note(note)
@@ -220,9 +220,9 @@ def post_status(a):
         die("note has no draft id")
     out = post_status_summary(note["draft"], note)
     note["fm"]["status"] = {"draft": "ready", "scheduled": "scheduled", "published": "published"}.get(out["status"], out["status"])
-    for k in ("linkedin_url", "x_url"):
-        if out.get(k):
-            note["fm"][k] = out[k]
+    for k in ("linkedin-url", "x-url"):
+        if out.get(k.replace("-", "_")):
+            note["fm"][k] = out[k.replace("-", "_")]
     write_note(note)
     return out
 
@@ -290,20 +290,20 @@ def read_note(path):
         elif current:
             sections[current].append(line)
     sec = {k: "\n".join(v).strip() for k, v in sections.items()}
-    image, alt = None, None
-    for line in sec.get("image", "").splitlines():
+    images = []
+    for line in (sec.get("image") or sec.get("images") or "").splitlines():
         m = re.search(r"!\[\[([^\]|]+)", line)
         if m:
-            image = m.group(1).strip()
-        if line.lower().startswith("alt:"):
-            alt = line[4:].strip()
-    return {"path": path, "text": text, "fm": fm, "title": fm.get("title") or os.path.basename(path), "draft": fm.get("draft") or None,
-            "linkedin": sec.get("linkedin", ""), "x": sec.get("x", ""), "comment": sec.get("comment", ""), "image": image, "alt": alt}
+            images.append({"file": m.group(1).strip(), "alt": None})
+        elif line.lower().startswith("alt:") and images:
+            images[-1]["alt"] = line[4:].strip()
+    return {"path": path, "text": text, "fm": fm, "title": fm.get("title") or os.path.basename(path), "draft": fm.get("typefully-draft") or None,
+            "linkedin": sec.get("linkedin", ""), "x": sec.get("x", ""), "comment": sec.get("comment", ""), "images": images}
 
 
 def write_note(note):
     text = note["text"]
-    keys = ["draft", "media", "status", "linkedin_url", "x_url"]
+    keys = ["typefully-draft", "typefully-media", "status", "linkedin-url", "x-url"]
     if not text.startswith("---\n"):
         text = "---\n---\n" + text
     end = text.index("\n---", 4)
@@ -325,20 +325,30 @@ def write_note(note):
 
 
 def ensure_media(note):
-    if not note["image"]:
+    if not note["images"]:
         return []
-    if note["fm"].get("media"):
-        return [note["fm"]["media"]]
+    cache = {}
+    for item in (note["fm"].get("typefully-media") or "").split(","):
+        if "=" in item:
+            k, v = item.split("=", 1)
+            cache[k.strip()] = v.strip()
     folder = os.path.dirname(os.path.abspath(note["path"]))
-    candidates = [os.path.join(folder, note["image"]), os.path.join(folder, "attachments", note["image"]), os.path.join(os.path.dirname(folder), "attachments", note["image"])]
-    path = next((c for c in candidates if os.path.exists(c)), None)
-    if not path:
-        die(f"image {note['image']!r} not found next to the note or in attachments/")
-    st = media_upload(argparse.Namespace(file=path, alt=note["alt"]))
-    if st.get("status") != "ready":
-        die(f"media not ready: {st}")
-    note["fm"]["media"] = st["media_id"]
-    return [st["media_id"]]
+    ids = []
+    for img in note["images"]:
+        if img["file"] in cache:
+            ids.append(cache[img["file"]])
+            continue
+        candidates = [os.path.join(folder, img["file"]), os.path.join(folder, "attachments", img["file"]), os.path.join(os.path.dirname(folder), "attachments", img["file"])]
+        path = next((c for c in candidates if os.path.exists(c)), None)
+        if not path:
+            die(f"image {img['file']!r} not found next to the note or in attachments/")
+        st = media_upload(argparse.Namespace(file=path, alt=img["alt"]))
+        if st.get("status") != "ready":
+            die(f"media not ready: {st}")
+        cache[img["file"]] = st["media_id"]
+        ids.append(st["media_id"])
+    note["fm"]["typefully-media"] = ", ".join(f"{img['file']}={cache[img['file']]}" for img in note["images"])
+    return ids
 
 
 def note_body(note, media):

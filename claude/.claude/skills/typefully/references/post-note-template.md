@@ -8,8 +8,8 @@ One note per post in `~/notes/2-projects/social/posts/`, named `<target date> <s
 title: Short internal title       # Typefully draft title, never posted
 status: drafting                  # drafting → ready → scheduled → published (status/log update it)
 theme: Slop                       # optional, from seed-themes
-draft:                            # written back by `post create`
-media:                            # written back after the image uploads
+typefully-draft:                  # written back by `post create`
+typefully-media:                  # file=id per image, written back after upload
 ---
 
 ## LinkedIn
@@ -27,8 +27,10 @@ One line with the link. Becomes the LinkedIn first comment and the X reply.
 
 ## Image
 
-![[filename.png]]
+![[first.png]]
 Alt: description used as alt text on both platforms
+![[second.png]]
+Alt: one Alt line per embed; images attach in this order (X allows 4, LinkedIn 10)
 
 ## Notes
 
@@ -37,8 +39,9 @@ Grading rounds, what changed and why, things to check before it goes out.
 
 Rules the loader applies:
 
-- The image embed is resolved next to the note, then in `attachments/` beside
-  the note or one level up. Upload happens once; `media:` caches the id.
+- Each image embed is resolved next to the note, then in `attachments/` beside
+  the note or one level up. Uploads happen once per file; `typefully-media`
+  caches `file=id` pairs, so only a new or renamed image re-uploads.
 - An empty `## X` means the LinkedIn text is used on X as is.
 - `## Comment` empty means no first comment and no reply post.
 - `post update` re-sends both platform bodies and the first comment, so the
