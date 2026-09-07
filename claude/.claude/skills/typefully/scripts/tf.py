@@ -6,7 +6,9 @@ import glob
 import json
 import os
 import re
+import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -60,6 +62,19 @@ def main():
     fc.add_argument("--text")
     fc.add_argument("--file")
     fc.add_argument("--clear", action="store_true")
+    po = sub.add_parser("post", help="load an Obsidian post note (see SKILL.md) into Typefully").add_subparsers(dest="sub", required=True)
+    for name in ("create", "update", "status", "log"):
+        sp = po.add_parser(name)
+        sp.add_argument("note", help="path to the post note")
+        if name == "log":
+            sp.add_argument("--linkedin", help="'reactions/comments' at one week, typed by hand")
+            sp.add_argument("--one-hour", help="'reactions/comments' at one hour, typed by hand")
+    mu = sub.add_parser("media", help="media commands").add_subparsers(dest="sub", required=True)
+    mup = mu.add_parser("upload", help="upload an image, video, gif, or pdf and wait until ready")
+    mup.add_argument("file")
+    mup.add_argument("--alt", help="alt text, set before attaching")
+    mst = mu.add_parser("status")
+    mst.add_argument("id")
     ig = sub.add_parser("internal", help="raw internal thread object")
     ig.add_argument("id")
     sub.add_parser("spec", help="refresh references/openapi.json and references/api.md")
@@ -169,6 +184,203 @@ def cmd_first_comment(a):
     return set_first_comment(a.id, text)
 
 
+def cmd_post(a):
+    return POST_COMMANDS[a.sub](a)
+
+
+def post_create(a):
+    note = read_note(a.note)
+    if note["draft"]:
+        die(f"note already has draft {note['draft']}; use `post update`")
+    media = ensure_media(note)
+    body = note_body(note, media)
+    r = public("POST", f"/social-sets/{social_set()}/drafts", body)
+    note["fm"]["draft"] = str(r["id"])
+    if note["comment"]:
+        set_first_comment(r["id"], note["comment"])
+    write_note(note)
+    return post_status_summary(r["id"], note)
+
+
+def post_update(a):
+    note = read_note(a.note)
+    if not note["draft"]:
+        die("note has no draft id; use `post create`")
+    media = ensure_media(note)
+    body = note_body(note, media)
+    public("PATCH", f"/social-sets/{social_set()}/drafts/{note['draft']}", body)
+    set_first_comment(note["draft"], note["comment"] or "")
+    write_note(note)
+    return post_status_summary(note["draft"], note)
+
+
+def post_status(a):
+    note = read_note(a.note)
+    if not note["draft"]:
+        die("note has no draft id")
+    out = post_status_summary(note["draft"], note)
+    note["fm"]["status"] = {"draft": "ready", "scheduled": "scheduled", "published": "published"}.get(out["status"], out["status"])
+    for k in ("linkedin_url", "x_url"):
+        if out.get(k):
+            note["fm"][k] = out[k]
+    write_note(note)
+    return out
+
+
+def post_log(a):
+    note = read_note(a.note)
+    out = post_status_summary(note["draft"], note) if note["draft"] else {}
+    log = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(a.note))), "Log.md")
+    x = out.get("x_analytics") or {}
+    xcell = f"{x.get('likes', '')} / {x.get('comments', '')} / {x.get('impressions', '')}" if x else ""
+    name = os.path.splitext(os.path.basename(a.note))[0]
+    row = f"| {(out.get('published_at') or dt.date.today().isoformat())[:10]} | [[{name}]] | {out.get('linkedin_url') or ''} | {out.get('x_url') or ''} | {a.one_hour or ''} | {a.linkedin or ''} | {xcell} |  |\n"
+    with open(log, "a") as f:
+        f.write(row)
+    return {"log": log, "row": row.strip()}
+
+
+def post_status_summary(draft_id, note):
+    d = public("GET", f"/social-sets/{social_set()}/drafts/{draft_id}")
+    out = {
+        "draft": int(draft_id),
+        "url": draft_url(draft_id),
+        "status": d.get("status"),
+        "scheduled_date": d.get("scheduled_date"),
+        "published_at": d.get("published_at"),
+        "linkedin_url": d.get("linkedin_published_url"),
+        "x_url": d.get("x_published_url"),
+        "platforms": {k: len(v.get("posts", [])) for k, v in (d.get("platforms") or {}).items() if v and v.get("enabled")},
+        "media": [p.get("media_ids") for v in (d.get("platforms") or {}).values() if v and v.get("enabled") for p in v.get("posts", [])[:1]],
+    }
+    try:
+        t = internal("GET", f"/threads/{draft_id}/")
+        out["first_comment"] = t.get("linkedin_v2_first_comment") if t.get("linkedin_v2_first_comment_enabled") else None
+    except SystemExit:
+        out["first_comment"] = "unknown (app token unavailable)"
+    if out["x_url"] and out["published_at"]:
+        day = out["published_at"][:10]
+        end = (dt.date.fromisoformat(day) + dt.timedelta(days=14)).isoformat()
+        try:
+            an = public("GET", f"/social-sets/{social_set()}/analytics/x/posts?start_date={day}&end_date={end}&limit=100")
+            for row in an.get("results", []):
+                if str(row.get("draft_id")) == str(draft_id):
+                    m = row.get("metrics", {})
+                    out["x_analytics"] = {"impressions": m.get("impressions"), **(m.get("engagement") or {})}
+        except SystemExit:
+            pass
+    return out
+
+
+def read_note(path):
+    text = read_file(path)
+    fm, rest = {}, text
+    if text.startswith("---\n"):
+        end = text.index("\n---", 4)
+        for line in text[4:end].splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                fm[k.strip()] = v.split("#")[0].strip() if v.strip() else ""
+        rest = text[end + 4:]
+    sections, current = {}, None
+    for line in rest.splitlines():
+        if line.startswith("## "):
+            current = line[3:].strip().lower()
+            sections[current] = []
+        elif current:
+            sections[current].append(line)
+    sec = {k: "\n".join(v).strip() for k, v in sections.items()}
+    image, alt = None, None
+    for line in sec.get("image", "").splitlines():
+        m = re.search(r"!\[\[([^\]|]+)", line)
+        if m:
+            image = m.group(1).strip()
+        if line.lower().startswith("alt:"):
+            alt = line[4:].strip()
+    return {"path": path, "text": text, "fm": fm, "title": fm.get("title") or os.path.basename(path), "draft": fm.get("draft") or None,
+            "linkedin": sec.get("linkedin", ""), "x": sec.get("x", ""), "comment": sec.get("comment", ""), "image": image, "alt": alt}
+
+
+def write_note(note):
+    text = note["text"]
+    keys = ["draft", "media", "status", "linkedin_url", "x_url"]
+    if not text.startswith("---\n"):
+        text = "---\n---\n" + text
+    end = text.index("\n---", 4)
+    lines = text[4:end].splitlines()
+    for k in keys:
+        v = note["fm"].get(k)
+        if v is None or v == "":
+            continue
+        for i, line in enumerate(lines):
+            if line.split(":", 1)[0].strip() == k:
+                lines[i] = f"{k}: {v}"
+                break
+        else:
+            lines.append(f"{k}: {v}")
+    text = "---\n" + "\n".join(lines) + text[end:]
+    with open(note["path"], "w") as f:
+        f.write(text)
+    note["text"] = text
+
+
+def ensure_media(note):
+    if not note["image"]:
+        return []
+    if note["fm"].get("media"):
+        return [note["fm"]["media"]]
+    folder = os.path.dirname(os.path.abspath(note["path"]))
+    candidates = [os.path.join(folder, note["image"]), os.path.join(folder, "attachments", note["image"]), os.path.join(os.path.dirname(folder), "attachments", note["image"])]
+    path = next((c for c in candidates if os.path.exists(c)), None)
+    if not path:
+        die(f"image {note['image']!r} not found next to the note or in attachments/")
+    st = media_upload(argparse.Namespace(file=path, alt=note["alt"]))
+    if st.get("status") != "ready":
+        die(f"media not ready: {st}")
+    note["fm"]["media"] = st["media_id"]
+    return [st["media_id"]]
+
+
+def note_body(note, media):
+    if not note["linkedin"]:
+        die("note has no ## LinkedIn section")
+    li = {"text": note["linkedin"]}
+    if media:
+        li["media_ids"] = media
+    x_text = note["x"] or note["linkedin"]
+    x_posts = [{"text": x_text}]
+    if media:
+        x_posts[0]["media_ids"] = media
+    if note["comment"]:
+        x_posts.append({"text": note["comment"]})
+    return {"draft_title": note["title"], "platforms": {"linkedin": {"enabled": True, "posts": [li]}, "x": {"enabled": True, "posts": x_posts}}}
+
+
+def cmd_media(a):
+    return MEDIA_COMMANDS[a.sub](a)
+
+
+def media_upload(a):
+    name = re.sub(r"[^a-zA-Z0-9_.()\-]", "-", os.path.basename(a.file))
+    body = {"file_name": name}
+    if a.alt:
+        body["alt_text"] = a.alt
+    r = public("POST", f"/social-sets/{social_set()}/media/upload", body)
+    code = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-T", a.file, r["upload_url"]], capture_output=True, text=True).stdout
+    if code not in ("200", "204"):
+        die(f"upload PUT returned HTTP {code}; the presigned URL rejects any extra headers")
+    deadline = time.time() + 90
+    while True:
+        st = public("GET", f"/social-sets/{social_set()}/media/{r['media_id']}")
+        if st.get("status") != "processing" or time.time() > deadline:
+            return st
+        time.sleep(2)
+
+
+def media_status(a):
+    return public("GET", f"/social-sets/{social_set()}/media/{a.id}")
+
+
 def cmd_internal(a):
     return internal("GET", f"/threads/{a.id}/")
 
@@ -205,9 +417,13 @@ COMMANDS = {
     "queue": cmd_queue,
     "drafts": cmd_drafts,
     "first-comment": cmd_first_comment,
+    "post": cmd_post,
+    "media": cmd_media,
     "internal": cmd_internal,
     "spec": cmd_spec,
 }
+POST_COMMANDS = {"create": post_create, "update": post_update, "status": post_status, "log": post_log}
+MEDIA_COMMANDS = {"upload": media_upload, "status": media_status}
 DRAFT_COMMANDS = {
     "list": drafts_list,
     "get": drafts_get,
@@ -230,6 +446,7 @@ def _content_args(sp):
     sp.add_argument("--tags", help="comma-separated tag slugs")
     sp.add_argument("--schedule", help='publish_at: ISO datetime with tz, or "next-free-slot"')
     sp.add_argument("--plan", help="plan_at: date it on the calendar without arming publish")
+    sp.add_argument("--media", help="comma-separated media ids from `media upload`, attached to the first post")
     sp.add_argument("--first-comment", help="LinkedIn first comment text (internal API)")
     sp.add_argument("--first-comment-file")
 
@@ -237,6 +454,16 @@ def _content_args(sp):
 def draft_body(a, create):
     body = {}
     text = a.text if a.text is not None else (read_file(a.file) if a.file else None)
+    media = [m.strip() for m in a.media.split(",") if m.strip()] if a.media else []
+    if media and text is None and not create:
+        existing = public("GET", f"/social-sets/{social_set()}/drafts/{a.id}")
+        platforms = {}
+        for name, cfg in existing.get("platforms", {}).items():
+            if cfg and cfg.get("enabled") and (not a.platform or name in a.platform.split(",")):
+                posts = [{"text": p["text"], "media_ids": p.get("media_ids", [])} for p in cfg["posts"]]
+                posts[0]["media_ids"] = media
+                platforms[name] = {"enabled": True, "posts": posts}
+        body["platforms"] = platforms
     if text is not None:
         if not a.platform:
             die("--platform is required with --text/--file")
@@ -249,6 +476,8 @@ def draft_body(a, create):
             if name == "linkedin" and len(posts) > 1:
                 die("LinkedIn takes one post; put the link in --first-comment instead of a second post")
             platforms[name] = {"enabled": True, "posts": [{"text": t} for t in posts]}
+            if media:
+                platforms[name]["posts"][0]["media_ids"] = media
         body["platforms"] = platforms
     elif a.platform and create:
         die("--platform needs --text or --file")

@@ -55,6 +55,9 @@ tf.py drafts plan <id> --time ...           # on the calendar, does not publish
 tf.py drafts unschedule <id>
 tf.py drafts delete <id> --yes
 tf.py drafts publish <id> --yes             # irreversible
+tf.py post create|update|status <note>       # Obsidian post note, see below
+tf.py post log <note> [--one-hour R/C] [--linkedin R/C]
+tf.py media upload <file> [--alt "..."]      # returns media_id when ready; then --media <id> on create/update
 tf.py queue [--start YYYY-MM-DD] [--end YYYY-MM-DD]
 tf.py tags | me | social-sets
 tf.py internal <id>                         # raw internal thread object
@@ -64,16 +67,45 @@ tf.py spec                                  # refresh references from the live O
 Thread posts for X are split by a line containing only `---` in the file.
 Draft URLs: `https://typefully.com/?d=<id>&a=320878`.
 
-## Workflow for a new post
+## The repeatable process
 
-1. User brings a draft or an idea. Coach it against `references/post-template.md`.
-2. Write the approved body to a file, create the draft with `--title` and
-   `--first-comment` (the link and one line of context).
-3. Paste the draft URL back. Confirm it is unscheduled unless asked.
-4. Schedule only when told. Then record the slot time in the scratchpad.
+Posts live in the Obsidian vault at `~/notes/2-projects/social/`:
+
+```
+social-ideas.md            the backlog of unwritten ideas
+Log.md                     one row per published post
+attachments/               images (Obsidian pastes here)
+posts/<date> <slug>.md     one note per post, see references/post-note-template.md
+```
+
+Stages, and who does them:
+
+1. **Pick.** Brendan moves an idea from `social-ideas.md` into a new post note.
+2. **Write and grade.** Brendan drafts in the note. Read it from disk, never from
+   a paste. Grade against `references/post-template.md` and put the round in
+   the note's `## Notes` section. Diagnose, don't draft: say which line fails
+   and why, not what to write instead. Every word in the post should be his.
+3. **Package.** The note holds the LinkedIn body, the X body (line breaks may
+   differ, words should not), the comment, and the image embed with alt text.
+4. **Load.** `tf.py post create <note>` creates the draft on both platforms,
+   uploads the image, sets the LinkedIn first comment and the X reply, and
+   writes `draft:` and `media:` back into the note. `tf.py post update <note>`
+   re-syncs after edits. Brendan opens Typefully once for the fold preview and
+   the schedule button. Say which 12:00Z slot it landed in.
+5. **After publishing.** The hour after the post is reply time. At one hour
+   note reactions and comments. `tf.py post status <note>` writes the
+   published URLs and status back to the note; `tf.py post log <note>
+   --one-hour "R/C" --linkedin "R/C"` appends the row to `Log.md` with the
+   X numbers pulled from the analytics API (LinkedIn analytics is not in the
+   API; those are typed in).
+
+The X copy is a cut of the LinkedIn copy, not a rewrite: numbers on their
+own lines, hook split, the link as a reply. Leave "Sync with X" off in the
+editor so the two versions stay independent.
 
 ## References
 
+- `references/post-note-template.md`: the note format `tf.py post` reads.
 - `references/post-template.md`: the five-block template, constraints, the
   ship checklist, and formatting that survives LinkedIn's mobile truncation.
 - `references/cadence.md`: six posts a week batched in a half day, 8am ET,
