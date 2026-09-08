@@ -2,6 +2,8 @@
 
 One note per post in `~/notes/2-projects/social/posts/`, named `<target date> <slug>.md`.
 `tf.py post create|update|status|log <note>` reads and writes it.
+Obsidian template: `~/notes/4-resources/obsidian/templates/Post.md` (adds a `## Structure`
+section with the writing rules; the loader ignores sections it does not know).
 
 ```markdown
 ---
