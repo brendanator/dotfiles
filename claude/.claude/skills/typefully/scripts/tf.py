@@ -276,7 +276,7 @@ def read_note(path):
     text = read_file(path)
     fm, rest = {}, text
     if text.startswith("---\n"):
-        end = text.index("\n---", 4)
+        end = text.index("\n---", 3)
         for line in text[4:end].splitlines():
             if ":" in line:
                 k, v = line.split(":", 1)
@@ -306,7 +306,7 @@ def write_note(note):
     keys = ["typefully-draft", "typefully-media", "status", "published-at", "linkedin-url", "x-url"]
     if not text.startswith("---\n"):
         text = "---\n---\n" + text
-    end = text.index("\n---", 4)
+    end = text.index("\n---", 3)
     lines = text[4:end].splitlines()
     for k in keys:
         v = note["fm"].get(k)
