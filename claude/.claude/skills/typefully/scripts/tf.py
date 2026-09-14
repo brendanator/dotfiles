@@ -292,9 +292,12 @@ def read_note(path):
     sec = {k: "\n".join(v).strip() for k, v in sections.items()}
     images = []
     for line in (sec.get("image") or sec.get("images") or "").splitlines():
-        m = re.search(r"!\[\[([^\]|]+)", line)
-        if m:
-            images.append({"file": m.group(1).strip(), "alt": None})
+        wiki = re.search(r"!\[\[([^\]|]+)", line)
+        md = re.search(r"!\[([^\]]*)\]\(([^)]+)\)", line)
+        if wiki:
+            images.append({"file": wiki.group(1).strip(), "alt": None})
+        elif md:
+            images.append({"file": urllib.parse.unquote(md.group(2).strip()), "alt": md.group(1).strip() or None})
         elif line.lower().startswith("alt:") and images:
             images[-1]["alt"] = line[4:].strip()
     return {"path": path, "text": text, "fm": fm, "title": fm.get("title") or os.path.basename(path), "draft": fm.get("typefully-draft") or None,

@@ -44,8 +44,11 @@ Grading rounds, what changed and why, things to check before it goes out.
 
 Rules the loader applies:
 
-- Each image embed is resolved next to the note, then in `attachments/` beside
-  the note or one level up. Uploads happen once per file; `typefully-media`
+- Image embeds can be Obsidian's `![[file.png]]` or a markdown link
+  `![alt](attachments/file.png)` (what a vault set to markdown links pastes;
+  `%20` is decoded). Each is resolved next to the note, then in `attachments/`
+  beside the note or one level up. A markdown link's own alt text is used when
+  there is no `Alt:` line. Uploads happen once per file; `typefully-media`
   caches `file=id` pairs, so only a new or renamed image re-uploads.
 - An empty `## X` means the LinkedIn text is used on X as is.
 - `## Comment` empty means no first comment and no reply post.
