@@ -54,16 +54,19 @@ eval "$(atuin init zsh)"
 # Zoxide directory jumper
 eval "$(zoxide init zsh)"
 
-# Auto-pull dotfiles (background, once every 4 hours)
-() {
-  local stamp="${DOTFILES:-$HOME/.dotfiles}/.state/last-pull"
-  local now=$(date +%s)
-  local last=0
-  [[ -f "$stamp" ]] && last=$(<"$stamp")
-  if (( now - last > 14400 )); then
-    { dotfiles pull && echo "$now" > "$stamp" } &>/dev/null &!
-  fi
-}
+# Auto-pull dotfiles (once every 4 hours). Runs entirely in a background
+# subshell so nothing here can block or break shell startup; it is silent
+# unless the pull fails, in which case the error is printed to the terminal.
+(
+  stamp="${DOTFILES:-$HOME/.dotfiles}/.state/last-pull"
+  now=$(date +%s)
+  [[ -r "$stamp" ]] && last=$(<"$stamp")
+  [[ "$last" == <-> ]] || last=0
+  (( now - last > 14400 )) || exit 0
+  # Stamp the attempt up front so shells opened together don't race each other.
+  mkdir -p "${stamp:h}" && echo "$now" > "$stamp"
+  out=$(dotfiles pull 2>&1) || print -r -- $'\n'"dotfiles auto-pull failed:"$'\n'"$out"
+) &!
 
 fpath+=~/.zfunc
 zstyle ':completion:*' menu select

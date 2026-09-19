@@ -17,12 +17,22 @@ usage() {
 }
 
 cmd_pull() {
-  git -C "$DOTFILES" pull --rebase
   cd "$DOTFILES"
+  # The 'git checkout .' below would silently discard local edits, so refuse instead.
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "WARN: uncommitted changes in $DOTFILES; not pulling." >&2
+    git status --short >&2
+    echo "Run 'dotfiles push' to commit them, or 'dotfiles diff' to review." >&2
+    exit 1
+  fi
+  git pull --rebase
   for dir in */; do
     stow --adopt "$dir" 2>&1 || echo "WARN: failed to stow $dir"
   done
   git checkout .
+  # Stamp read by .zshrc's auto-pull; .state/ is gitignored so may not exist yet.
+  mkdir -p .state
+  date +%s > .state/last-pull
 }
 
 cmd_push() {
