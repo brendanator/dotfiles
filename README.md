@@ -31,3 +31,15 @@ stow -R */
 # Remove a package's symlinks
 stow -D <package>
 ```
+
+## Syncing
+
+```bash
+dotfiles push          # auto-commit and push local changes
+dotfiles pull          # pull and re-stow
+dotfiles sync-remotes  # push, then `dotfiles pull` over ssh on every remote
+```
+
+`sync-remotes` reads hosts from `~/.dotfiles/remotes` (gitignored, one ssh host
+per line, `#` comments allowed), or takes them as arguments:
+`dotfiles sync-remotes ape-devbox-brendan-1`.

@@ -18,6 +18,9 @@
 # State
 .state/
 
+# Per-machine ssh hosts for `dotfiles sync-remotes`
+/remotes
+
 # Local docs/plans (not dotfiles)
 docs/
 

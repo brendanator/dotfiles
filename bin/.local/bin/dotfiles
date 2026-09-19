@@ -2,13 +2,17 @@
 set -euo pipefail
 
 DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
+# Gitignored, per-machine list of ssh hosts: one per line, '#' comments allowed.
+REMOTES="$DOTFILES/remotes"
 
 usage() {
-  echo "Usage: dotfiles <pull|push|diff|status>"
-  echo "  pull    Pull latest changes"
-  echo "  push    Auto-commit and push local changes"
-  echo "  diff    Show uncommitted changes"
-  echo "  status  Show working tree status"
+  echo "Usage: dotfiles <pull|push|sync-remotes|diff|status>"
+  echo "  pull                   Pull latest changes"
+  echo "  push                   Auto-commit and push local changes"
+  echo "  sync-remotes [host...] Push, then run 'dotfiles pull' on each remote"
+  echo "                         (hosts default to the list in $REMOTES)"
+  echo "  diff                   Show uncommitted changes"
+  echo "  status                 Show working tree status"
   exit 1
 }
 
@@ -50,6 +54,53 @@ cmd_push() {
   }
 }
 
+cmd_sync_remotes() {
+  local hosts=("$@") host line
+  if [ ${#hosts[@]} -eq 0 ]; then
+    if [ ! -f "$REMOTES" ]; then
+      echo "No remotes file. Add ssh hosts, one per line, to $REMOTES"
+      exit 1
+    fi
+    while IFS= read -r line || [ -n "$line" ]; do
+      line="${line%%#*}"
+      line="$(echo $line)"
+      [ -n "$line" ] && hosts+=("$line")
+    done < "$REMOTES"
+  fi
+  if [ ${#hosts[@]} -eq 0 ]; then
+    echo "No remotes listed in $REMOTES"
+    exit 1
+  fi
+
+  cmd_push
+
+  # Pull on all remotes in parallel, buffering output so hosts don't interleave.
+  # A login shell gives the remote its usual PATH (stow, git, ~/.local/bin).
+  local tmp pids=() failed=0 i
+  tmp="$(mktemp -d)"
+  for i in "${!hosts[@]}"; do
+    ssh -n -o BatchMode=yes -o ConnectTimeout=10 "${hosts[$i]}" \
+      'exec "$SHELL" -lc "PATH=\"\$HOME/.local/bin:\$PATH\" dotfiles pull"' \
+      >"$tmp/$i" 2>&1 &
+    pids+=($!)
+  done
+  for i in "${!hosts[@]}"; do
+    if wait "${pids[$i]}"; then
+      echo "✓ ${hosts[$i]}"
+    else
+      echo "✗ ${hosts[$i]}"
+      failed=$((failed + 1))
+    fi
+    sed 's/^/    /' "$tmp/$i"
+  done
+  rm -rf "$tmp"
+
+  if [ "$failed" -gt 0 ]; then
+    echo "$failed of ${#hosts[@]} remotes failed."
+    exit 1
+  fi
+}
+
 cmd_diff() {
   git -C "$DOTFILES" diff
 }
@@ -59,9 +110,10 @@ cmd_status() {
 }
 
 case "${1:-}" in
-  pull)    cmd_pull ;;
-  push)    cmd_push ;;
-  diff)    cmd_diff ;;
-  status)  cmd_status ;;
-  *)       usage ;;
+  pull)         cmd_pull ;;
+  push)         cmd_push ;;
+  sync-remotes) shift; cmd_sync_remotes "$@" ;;
+  diff)         cmd_diff ;;
+  status)       cmd_status ;;
+  *)            usage ;;
 esac
