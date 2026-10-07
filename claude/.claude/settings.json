@@ -1,5 +1,5 @@
 {
-  "cleanupPeriodDays": 90,
+  "cleanupPeriodDays": 99999,
   "permissions": {
     "defaultMode": "auto"
   },
@@ -37,22 +37,14 @@
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "[ -z \"$AGENTOS_PROJECT\" ] && afplay /System/Library/Sounds/Glass.aiff &"
+            "command": "[ -n \"$AGENTOS_PROJECT\" ] && exit 0; if command -v afplay >/dev/null 2>&1; then afplay /System/Library/Sounds/Glass.aiff & else { t=$(tmux display-message -p '#{pane_tty}' 2>/dev/null) && printf '\\a' > \"$t\"; } 2>/dev/null || printf '\\a' > /dev/tty 2>/dev/null || true; fi"
           }
         ]
       }
     ]
-  },
-  "enabledPlugins": {
-    "superpowers@superpowers-marketplace": false,
-    "beads@beads-marketplace": false,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "typefully-skills": {
@@ -69,5 +61,6 @@
   "editorMode": "vim",
   "autoCompactEnabled": false,
   "idleCompaction": false,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "feedbackDrafts": "off"
 }
