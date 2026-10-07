@@ -1,0 +1,73 @@
+{
+  "cleanupPeriodDays": 90,
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "m=\"$(command -v mise || echo \"$HOME/.local/bin/mise\")\"; [ -x \"$m\" ] && [ -n \"$CLAUDE_ENV_FILE\" ] && \"$m\" env -s bash >> \"$CLAUDE_ENV_FILE\"; exit 0"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/dangerous-command-guard.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: The AskUserQuestion tool is banned. Please ensure you do not already have answers to these questions, then state what you would have asked. If you need to ask multiple questions, prefer a numbered list.' >&2; exit 2"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -z \"$AGENTOS_PROJECT\" ] && afplay /System/Library/Sounds/Glass.aiff &"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": false,
+    "beads@beads-marketplace": false,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "typefully-skills": {
+      "source": {
+        "source": "github",
+        "repo": "typefully/agent-skills"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "autoCompactEnabled": false,
+  "idleCompaction": false,
+  "skipAutoPermissionPrompt": true
+}

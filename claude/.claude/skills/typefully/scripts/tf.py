@@ -158,7 +158,7 @@ def drafts_plan(a):
 
 
 def drafts_unschedule(a):
-    return public("PATCH", f"/social-sets/{social_set()}/drafts/{a.id}", {"publish_at": None, "plan_at": None})
+    return public("PATCH", f"/social-sets/{social_set()}/drafts/{a.id}", {"publish_at": None})
 
 
 def drafts_delete(a):

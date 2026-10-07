@@ -12,6 +12,7 @@ jq = "latest"
 lazygit = "latest"
 neovim = "latest"
 ripgrep = "latest"
+sccache = "latest"
 starship = "latest"
 tiny = "latest"
 usage = "latest"
@@ -33,5 +34,6 @@ uvx = true
 compile = false
 
 [env]
+RUSTC_WRAPPER = "sccache"  # share rustc results across worktrees; each keeps its own target/
 PIPENV_VENV_IN_PROJECT = 0
 PYTHONPYCACHEPREFIX = "{{ xdg_cache_home }}/pycache{{ cwd }}"
