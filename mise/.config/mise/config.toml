@@ -1,15 +1,20 @@
 [tools]
 1password-cli = "latest"
 age = "latest"
+ast-grep = "latest"
 atuin = "latest"
+bat = "latest"
+btop = { version = "latest", os = ["linux"] }  # aqua ships no macOS build; brew keeps btop on the Mac
 "github:aldanial/cloc" = "v2.08"
 cargo-binstall = "latest"
 codex = "latest"
 eza = "0.23.4"
 fnox = "latest"
+gh = "latest"
 hcloud = "latest"
 jq = "latest"
 lazygit = "latest"
+mkcert = "latest"
 neovim = "latest"
 ripgrep = "latest"
 sccache = "latest"
@@ -23,7 +28,7 @@ fzf = "latest"
 
 [settings]
 experimental = true
-install_before = "7d"  # only install versions released more than 7 days ago
+minimum_release_age = "7d"  # only install versions released more than 7 days ago
 env_cache = true
 quiet = false
 
