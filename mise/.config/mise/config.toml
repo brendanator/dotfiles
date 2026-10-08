@@ -23,7 +23,7 @@ fzf = "latest"
 
 [settings]
 experimental = true
-install_before = "7d"  # only install versions released more than 7 days ago
+minimum_release_age = "7d"  # only install versions released more than 7 days ago
 env_cache = true
 quiet = false
 
