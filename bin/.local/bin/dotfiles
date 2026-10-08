@@ -2,8 +2,6 @@
 set -euo pipefail
 
 DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
-# Gitignored, per-machine list of ssh hosts: one per line, '#' comments allowed.
-REMOTES="$DOTFILES/remotes"
 MISE="$(command -v mise || echo "$HOME/.local/bin/mise")"
 
 usage() {
@@ -11,8 +9,8 @@ usage() {
   echo "  apply                  Link the configs into \$HOME (mise dot apply)"
   echo "  pull                   Pull latest changes, then apply"
   echo "  push                   Auto-commit and push local changes"
-  echo "  sync-remotes [host...] Push, then run 'dotfiles pull' on each remote"
-  echo "                         (hosts default to the list in $REMOTES)"
+  echo "  sync-remotes [args...] Push, then mise bootstrap remote (default: --all"
+  echo "                         hosts in mise.local.toml); args go to mise"
   echo "  diff                   Show uncommitted changes"
   echo "  status                 Show working tree status"
   exit 1
@@ -70,50 +68,17 @@ cmd_push() {
 }
 
 cmd_sync_remotes() {
-  local hosts=("$@") host line
-  if [ ${#hosts[@]} -eq 0 ]; then
-    if [ ! -f "$REMOTES" ]; then
-      echo "No remotes file. Add ssh hosts, one per line, to $REMOTES"
-      exit 1
-    fi
-    while IFS= read -r line || [ -n "$line" ]; do
-      line="${line%%#*}"
-      line="$(echo $line)"
-      [ -n "$line" ] && hosts+=("$line")
-    done < "$REMOTES"
+  # Each host fast-forwards its ~/.dotfiles clone from GitHub, so push first,
+  # except for a dry run, which should change nothing.
+  case " $* " in
+    *" -n "*|*" --dry-run "*) ;;
+    *) cmd_push ;;
+  esac
+  # Hosts come from [bootstrap.remote.hosts] in the gitignored mise.local.toml.
+  if [ $# -eq 0 ]; then
+    set -- --all
   fi
-  if [ ${#hosts[@]} -eq 0 ]; then
-    echo "No remotes listed in $REMOTES"
-    exit 1
-  fi
-
-  cmd_push
-
-  # Pull on all remotes in parallel, buffering output so hosts don't interleave.
-  # A login shell gives the remote its usual PATH (mise, git, ~/.local/bin).
-  local tmp pids=() failed=0 i
-  tmp="$(mktemp -d)"
-  for i in "${!hosts[@]}"; do
-    ssh -n -o BatchMode=yes -o ConnectTimeout=10 "${hosts[$i]}" \
-      'exec "$SHELL" -lc "PATH=\"\$HOME/.local/bin:\$PATH\" dotfiles pull"' \
-      >"$tmp/$i" 2>&1 &
-    pids+=($!)
-  done
-  for i in "${!hosts[@]}"; do
-    if wait "${pids[$i]}"; then
-      echo "✓ ${hosts[$i]}"
-    else
-      echo "✗ ${hosts[$i]}"
-      failed=$((failed + 1))
-    fi
-    sed 's/^/    /' "$tmp/$i"
-  done
-  rm -rf "$tmp"
-
-  if [ "$failed" -gt 0 ]; then
-    echo "$failed of ${#hosts[@]} remotes failed."
-    exit 1
-  fi
+  "$MISE" -C "$DOTFILES" bootstrap remote "$@"
 }
 
 cmd_diff() {

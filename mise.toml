@@ -1,6 +1,16 @@
-# Links this repo's configs into $HOME with `mise dot apply` (or `mise bootstrap`).
-# Each top-level directory is a group, like a stow package: its tree mirrors $HOME,
-# and each file git tracks in it is symlinked into place (manifest = "git").
+# Sets up a machine with `mise bootstrap`, run from this directory: packages, files,
+# services, the firewall, the configs below, the login shell and mise's [tools].
+# Docs: https://mise.jdx.dev/bootstrap.html
+#
+# What a machine gets beyond this file comes from its module, chosen by mise env:
+#   mise.mac.toml     brew formulae and casks
+#   mise.devbox.toml  apt packages, Tailscale, host firewall, the ~/.dotfiles clone
+# setup.sh records the env in the gitignored .miserc.local.toml; a remote run
+# takes it from the host's mise_env in the inventory (mise.local.toml).
+#
+# Configs: each top-level directory is a group, like a stow package: its tree
+# mirrors $HOME, and each file git tracks in it is symlinked into place
+# (manifest = "git"), from ~/.dotfiles (dotfiles.root) wherever mise runs.
 # Docs: https://mise.jdx.dev/dotfiles.html
 #
 # A machine applies every group below unless its own (gitignored) mise.local.toml
@@ -8,6 +18,14 @@
 #
 #   [bootstrap]
 #   dotfile_groups = ["zsh", "git", "nvim"]
+
+[bootstrap.user]
+login_shell = "/bin/zsh"
+
+# `mise bootstrap remote` sends this directory to each host; keep this machine's
+# own choices (env, groups, inventory) and state at home.
+[bootstrap.remote]
+exclude = [".miserc.local.toml", "mise.local.toml", ".state", "docs"]
 
 [dotfiles]
 # Claude Code's user settings: the repo owns only the keys in its file, so a

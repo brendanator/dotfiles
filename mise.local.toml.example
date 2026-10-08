@@ -1,0 +1,19 @@
+# Copy to mise.local.toml (gitignored) on the machine you run remote bootstraps
+# from, and list your boxes. `dotfiles sync-remotes` bootstraps all of them.
+# Docs: https://mise.jdx.dev/bootstrap/remote.html
+
+# Defaults for the hosts below.
+[bootstrap.remote]
+mise_env = ["devbox"]  # loads mise.devbox.toml on the host
+install_mise = true    # keep mise at ~/.local/bin/mise, at this machine's version
+
+# One table per box. Use its tailnet (MagicDNS) name: devboxes accept ssh only
+# from the tailnet.
+[bootstrap.remote.hosts.devbox-1]
+host = "devbox-1.your-tailnet.ts.net"
+user = "you"  # needs passwordless sudo, or run attended
+tags = ["devbox"]
+
+# This machine's own dotfile groups, if it should not link them all.
+# [bootstrap]
+# dotfile_groups = ["zsh", "git", "nvim"]

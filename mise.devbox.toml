@@ -1,0 +1,85 @@
+# Devbox module: an Ubuntu 24.04 server reached only over Tailscale. Loaded when
+# the mise env includes "devbox": `mise bootstrap remote` passes the inventory's
+# mise_env, and setup.sh writes .miserc.local.toml with env = ["devbox"].
+# Docs: https://mise.jdx.dev/bootstrap.html
+
+# The checkout the dotfile groups link from (dotfiles.root, ~/.dotfiles). A remote
+# run stages this repo in a temp dir, so the links need a real clone on the host;
+# each run fast-forwards it to main. It fails, changing nothing, when the clone
+# has local changes: `dotfiles push` them first, or pass --skip-dirty.
+[bootstrap.repos]
+"~/.dotfiles" = { url = "https://github.com/brendanator/dotfiles.git", ref = "main" }
+
+[bootstrap.hooks]
+post-repos = "git -C ~/.dotfiles submodule update --init --recursive"
+# [bootstrap.user] runs chsh, which asks for a password that cloud users lack;
+# set the shell as root first, so it finds the shell already set.
+pre-user = 'test "$(getent passwd "$(id -un)" | cut -d: -f7)" = /bin/zsh || sudo usermod -s /bin/zsh "$(id -un)"'
+
+[bootstrap.packages]
+"apt:build-essential" = "latest"
+"apt:ca-certificates" = "latest"
+"apt:curl" = "latest"
+"apt:git" = "latest"
+"apt:nftables" = "latest"
+"apt:tailscale" = "latest"
+"apt:tmux" = "latest"
+"apt:tmuxinator" = "latest"
+"apt:unzip" = "latest"
+"apt:zsh" = "latest"
+
+# Tailscale's apt repo (https://pkgs.tailscale.com/stable/#ubuntu-noble), with the
+# armored key, as mise copies only text files. Replaces the list its installer wrote.
+[bootstrap.directories."/etc/apt/keyrings"]
+owner = "root"
+group = "root"
+mode = "0755"
+phase = "pre-packages"
+
+[bootstrap.files."/etc/apt/keyrings/tailscale.asc"]
+source = "bootstrap/devbox/tailscale.asc"
+owner = "root"
+group = "root"
+mode = "0644"
+phase = "pre-packages"
+
+[bootstrap.files."/etc/apt/sources.list.d/tailscale.list"]
+content = """
+deb [signed-by=/etc/apt/keyrings/tailscale.asc] https://pkgs.tailscale.com/stable/ubuntu noble main
+"""
+owner = "root"
+group = "root"
+mode = "0644"
+phase = "pre-packages"
+
+# Joining the tailnet is a one-time `sudo tailscale up`; see README.
+[bootstrap.services.tailscaled]
+state = "running"
+enabled = true
+
+# Second layer behind the Hetzner firewall `tailnet-only` (`mise run devbox:lockdown`),
+# which is what stops Docker's published ports: Docker forwards those past these
+# rules. mise refuses a deny policy unless a rule covers the ssh session it runs
+# in, so runs must arrive over the tailnet.
+# Docs: https://mise.jdx.dev/bootstrap/firewall.html
+[bootstrap.linux.firewall]
+backend = "nftables"
+default_incoming = "deny"
+default_outgoing = "allow"
+
+[[bootstrap.linux.firewall.rules]]
+name = "ssh-tailnet-v4"
+protocol = "tcp"
+port = 22
+source = "100.64.0.0/10"  # Tailscale's IPv4 range
+
+[[bootstrap.linux.firewall.rules]]
+name = "ssh-tailnet-v6"
+protocol = "tcp"
+port = 22
+source = "fd7a:115c:a1e0::/48"  # Tailscale's IPv6 range; MagicDNS names resolve to both
+
+[[bootstrap.linux.firewall.rules]]
+name = "tailscale-wireguard"
+protocol = "udp"
+port = 41641  # direct peer connections; without it traffic still flows, via DERP relays

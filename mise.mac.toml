@@ -1,0 +1,62 @@
+# Mac module: loaded when the mise env includes "mac" (setup.sh writes
+# .miserc.local.toml with env = ["mac"]).
+# Docs: https://mise.jdx.dev/bootstrap/packages/brew.html
+#
+# Packages mise installs as Homebrew does, into /opt/homebrew; brew still sees and
+# manages them. CLI tools that mise can install itself live in
+# mise/.config/mise/config.toml [tools] instead. Nothing here is ever uninstalled:
+# deleting an entry leaves the package, as there is no `prune`.
+
+[bootstrap.user]
+login_shell = "/bin/zsh"
+
+[bootstrap.brew.taps]
+"dicklesworthstone/tap" = "https://github.com/dicklesworthstone/homebrew-tap.git"
+"steipete/tap" = "https://github.com/steipete/homebrew-tap.git"
+"withgraphite/tap" = "https://github.com/withgraphite/homebrew-tap.git"
+
+[bootstrap.packages]
+# Formulae
+"brew:automake" = "latest"
+"brew:beads" = "latest"
+"brew:bison" = "latest"
+"brew:btop" = "latest"  # [tools] installs btop only on Linux
+"brew:coreutils" = "latest"
+"brew:curl" = "latest"
+"brew:fd" = "latest"
+"brew:gcc" = "latest"
+"brew:gnupg" = "latest"
+"brew:go" = "latest"
+"brew:gobject-introspection" = "latest"
+"brew:graphviz" = "latest"
+"brew:help2man" = "latest"
+"brew:htop" = "latest"
+"brew:less" = "latest"
+"brew:libpq" = "latest"
+"brew:meson" = "latest"
+"brew:mysql" = "latest"
+"brew:ossp-uuid" = "latest"
+"brew:poppler" = "latest"
+"brew:postgresql@18" = "latest"
+"brew:python-setuptools" = "latest"
+"brew:tesseract" = "latest"
+"brew:tig" = "latest"
+"brew:tmux" = "latest"
+"brew:tmuxinator" = "latest"
+"brew:tree" = "latest"
+"brew:tree-sitter" = "latest"
+"brew:tree-sitter-cli" = "latest"
+"brew:watch" = "latest"
+"brew:dicklesworthstone/tap/bv" = "latest"
+"brew:dicklesworthstone/tap/cass" = "latest"
+"brew:steipete/tap/bird" = "latest"
+"brew:withgraphite/tap/graphite" = "latest"
+
+# Casks. android/tap/android-cli and nikitabobko/tap/aerospace stay with brew:
+# their taps publish no API metadata, so mise needs Ruby 3 just to plan them.
+"brew-cask:android-commandlinetools" = "latest"
+"brew-cask:android-platform-tools" = "latest"
+"brew-cask:ghostty@tip" = "latest"
+"brew-cask:ngrok" = "latest"
+"brew-cask:obsidian" = "latest"
+"brew-cask:orbstack" = "latest"
