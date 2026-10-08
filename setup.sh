@@ -24,7 +24,7 @@ fi
 cd "$DOTFILES"
 git submodule update --init --recursive
 
-# Link the configs (groups in mise.toml); this also converts a home set up by stow.
+# Link the configs (groups in mise.toml).
 echo "Linking configs via mise..."
 "$DOTFILES/bin/.local/bin/dotfiles" apply
 

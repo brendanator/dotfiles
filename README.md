@@ -13,8 +13,6 @@ git clone --recursive https://github.com/brendanator/dotfiles.git ~/.dotfiles
 
 `setup.sh` installs mise and zsh, links the configs with `dotfiles apply`,
 installs the tools from `~/.config/mise/config.toml`, and makes zsh the login shell.
-It also converts a home that GNU Stow set up: folded directory links become real
-directories, and `~/.claude/settings.json` becomes a real file.
 
 ## Packages
 
