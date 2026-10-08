@@ -4,10 +4,12 @@ set -euo pipefail
 DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
 # Gitignored, per-machine list of ssh hosts: one per line, '#' comments allowed.
 REMOTES="$DOTFILES/remotes"
+MISE="$(command -v mise || echo "$HOME/.local/bin/mise")"
 
 usage() {
-  echo "Usage: dotfiles <pull|push|sync-remotes|diff|status>"
-  echo "  pull                   Pull latest changes"
+  echo "Usage: dotfiles <apply|pull|push|sync-remotes|diff|status>"
+  echo "  apply                  Link the configs into \$HOME (mise dot apply)"
+  echo "  pull                   Pull latest changes, then apply"
   echo "  push                   Auto-commit and push local changes"
   echo "  sync-remotes [host...] Push, then run 'dotfiles pull' on each remote"
   echo "                         (hosts default to the list in $REMOTES)"
@@ -16,9 +18,51 @@ usage() {
   exit 1
 }
 
+# stow folded a directory it owned into a single symlink (e.g. ~/.claude/hooks), and
+# mise refuses to write through one. Turn each such link back into a real directory,
+# moving whatever untracked files the apps left in the repo through it (hosts.yml,
+# .zsh_history, ...) out into that directory. Does nothing once no folded links remain.
+unfold_stow_links() {
+  local dir pkg rel link src f
+  # Every directory above a tracked file, parents sorting before their children.
+  git -C "$DOTFILES" ls-files | awk -F/ '{ d = $1; for (i = 2; i < NF; i++) { d = d "/" $i; print d } }' |
+    sort -u | while IFS= read -r dir; do
+    pkg="${dir%%/*}"
+    rel="${dir#"$pkg"}"
+    rel="${rel#/}"
+    [ -n "$rel" ] || continue
+    link="$HOME/$rel"
+    src="$DOTFILES/$pkg/$rel"
+    [ -L "$link" ] && [ -d "$link" ] || continue
+    [ "$(cd "$link" && pwd -P)" = "$(cd "$src" && pwd -P)" ] || continue
+    echo "Unfolding stow link ~/$rel"
+    rm "$link"
+    mkdir "$link"
+    (cd "$src" && git ls-files --others .) | while IFS= read -r f; do
+      mkdir -p "$(dirname "$link/$f")"
+      mv "$src/$f" "$link/$f"
+    done
+  done
+
+  # mise merges keys into ~/.claude/settings.json, so it must be a real file, not
+  # stow's symlink to the repo copy.
+  local settings="$HOME/.claude/settings.json"
+  if [ -L "$settings" ] && [ "$(realpath "$settings")" = "$(realpath "$DOTFILES/claude/.claude/settings.json")" ]; then
+    echo "Replacing stow link ~/.claude/settings.json with a copy"
+    cp "$settings" "$settings.tmp"
+    mv "$settings.tmp" "$settings"
+  fi
+}
+
+cmd_apply() {
+  unfold_stow_links
+  "$MISE" trust --quiet "$DOTFILES/mise.toml"
+  "$MISE" -C "$DOTFILES" dotfiles apply --yes
+}
+
 cmd_pull() {
   cd "$DOTFILES"
-  # The 'git checkout .' below would silently discard local edits, so refuse instead.
+  # Refuse rather than let the rebase trip over local edits.
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "WARN: uncommitted changes in $DOTFILES; not pulling." >&2
     git status --short >&2
@@ -26,10 +70,8 @@ cmd_pull() {
     exit 1
   fi
   git pull --rebase
-  for dir in */; do
-    stow --adopt "$dir" 2>&1 || echo "WARN: failed to stow $dir"
-  done
-  git checkout .
+  git submodule update --init --recursive
+  cmd_apply
   # Stamp read by .zshrc's auto-pull; .state/ is gitignored so may not exist yet.
   mkdir -p .state
   date +%s > .state/last-pull
@@ -85,7 +127,7 @@ cmd_sync_remotes() {
   cmd_push
 
   # Pull on all remotes in parallel, buffering output so hosts don't interleave.
-  # A login shell gives the remote its usual PATH (stow, git, ~/.local/bin).
+  # A login shell gives the remote its usual PATH (mise, git, ~/.local/bin).
   local tmp pids=() failed=0 i
   tmp="$(mktemp -d)"
   for i in "${!hosts[@]}"; do
@@ -120,6 +162,7 @@ cmd_status() {
 }
 
 case "${1:-}" in
+  apply)        cmd_apply ;;
   pull)         cmd_pull ;;
   push)         cmd_push ;;
   sync-remotes) shift; cmd_sync_remotes "$@" ;;

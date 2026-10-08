@@ -2,6 +2,7 @@
 set -euo pipefail
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
+export DOTFILES  # read by the dotfiles script
 
 echo "Installing dotfiles from $DOTFILES"
 
@@ -12,27 +13,22 @@ if ! command -v mise &>/dev/null; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Install stow and zsh
+# Install zsh
 if [[ "$(uname)" == "Darwin" ]]; then
-  command -v stow &>/dev/null || brew install stow
   command -v zsh &>/dev/null || brew install zsh
 else
-  sudo apt-get install -y stow zsh
+  command -v zsh &>/dev/null || sudo apt-get install -y zsh
 fi
 
 # Init submodules (prezto)
 cd "$DOTFILES"
 git submodule update --init --recursive
 
-# Stow all packages (--adopt absorbs existing files, then we restore repo versions)
-echo "Stowing packages..."
-for dir in */; do
-  [[ "$dir" == "docs/" ]] && continue
-  stow --adopt -v "$dir" 2>&1 || echo "WARN: failed to stow $dir"
-done
-git checkout .
+# Link the configs (groups in mise.toml); this also converts a home set up by stow.
+echo "Linking configs via mise..."
+"$DOTFILES/bin/.local/bin/dotfiles" apply
 
-# Install mise tools
+# Install mise tools (from the global config just linked)
 echo "Installing tools via mise..."
 mise install
 
