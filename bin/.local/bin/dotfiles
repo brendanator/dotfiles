@@ -4,10 +4,12 @@ set -euo pipefail
 DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
 # Gitignored, per-machine list of ssh hosts: one per line, '#' comments allowed.
 REMOTES="$DOTFILES/remotes"
+MISE="$(command -v mise || echo "$HOME/.local/bin/mise")"
 
 usage() {
-  echo "Usage: dotfiles <pull|push|sync-remotes|diff|status>"
-  echo "  pull                   Pull latest changes"
+  echo "Usage: dotfiles <apply|pull|push|sync-remotes|diff|status>"
+  echo "  apply                  Link the configs into \$HOME (mise dot apply)"
+  echo "  pull                   Pull latest changes, then apply"
   echo "  push                   Auto-commit and push local changes"
   echo "  sync-remotes [host...] Push, then run 'dotfiles pull' on each remote"
   echo "                         (hosts default to the list in $REMOTES)"
@@ -16,9 +18,14 @@ usage() {
   exit 1
 }
 
+cmd_apply() {
+  "$MISE" trust --quiet "$DOTFILES/mise.toml"
+  "$MISE" -C "$DOTFILES" dotfiles apply --yes
+}
+
 cmd_pull() {
   cd "$DOTFILES"
-  # The 'git checkout .' below would silently discard local edits, so refuse instead.
+  # Refuse rather than let the rebase trip over local edits.
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "WARN: uncommitted changes in $DOTFILES; not pulling." >&2
     git status --short >&2
@@ -26,10 +33,8 @@ cmd_pull() {
     exit 1
   fi
   git pull --rebase
-  for dir in */; do
-    stow --adopt "$dir" 2>&1 || echo "WARN: failed to stow $dir"
-  done
-  git checkout .
+  git submodule update --init --recursive
+  cmd_apply
   # Stamp read by .zshrc's auto-pull; .state/ is gitignored so may not exist yet.
   mkdir -p .state
   date +%s > .state/last-pull
@@ -85,7 +90,7 @@ cmd_sync_remotes() {
   cmd_push
 
   # Pull on all remotes in parallel, buffering output so hosts don't interleave.
-  # A login shell gives the remote its usual PATH (stow, git, ~/.local/bin).
+  # A login shell gives the remote its usual PATH (mise, git, ~/.local/bin).
   local tmp pids=() failed=0 i
   tmp="$(mktemp -d)"
   for i in "${!hosts[@]}"; do
@@ -119,11 +124,17 @@ cmd_status() {
   git -C "$DOTFILES" status
 }
 
-case "${1:-}" in
-  pull)         cmd_pull ;;
-  push)         cmd_push ;;
-  sync-remotes) shift; cmd_sync_remotes "$@" ;;
-  diff)         cmd_diff ;;
-  status)       cmd_status ;;
-  *)            usage ;;
-esac
+# Braces make bash parse to the final exit before running anything, so a pull
+# that rewrites this file can't make it run on from the middle of the new one.
+{
+  case "${1:-}" in
+    apply)        cmd_apply ;;
+    pull)         cmd_pull ;;
+    push)         cmd_push ;;
+    sync-remotes) shift; cmd_sync_remotes "$@" ;;
+    diff)         cmd_diff ;;
+    status)       cmd_status ;;
+    *)            usage ;;
+  esac
+  exit
+}

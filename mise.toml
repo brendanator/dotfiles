@@ -1,0 +1,119 @@
+# Links this repo's configs into $HOME with `mise dot apply` (or `mise bootstrap`).
+# Each top-level directory is a group, like a stow package: its tree mirrors $HOME,
+# and each file git tracks in it is symlinked into place (manifest = "git").
+# Docs: https://mise.jdx.dev/dotfiles.html
+#
+# A machine applies every group below unless its own (gitignored) mise.local.toml
+# narrows the set:
+#
+#   [bootstrap]
+#   dotfile_groups = ["zsh", "git", "nvim"]
+
+[dotfiles]
+# Claude Code's user settings: the repo owns only the keys in its file, so a
+# machine's own keys (e.g. a private autoMode block) survive in ~/.claude/settings.json.
+"~/.claude/settings.json/shared" = { source = "claude/.claude/settings.json", merge = true }
+
+[dotfile_groups.atuin]
+root = "atuin"
+manifest = "git"
+
+[dotfile_groups.bash]
+root = "bash"
+manifest = "git"
+
+[dotfile_groups.bin]
+root = "bin"
+manifest = "git"
+
+[dotfile_groups.bun]
+root = "bun"
+manifest = "git"
+
+[dotfile_groups.claude]
+root = "claude"
+manifest = "git"
+exclude = [".claude/settings.json"]  # merged by the [dotfiles] entry above
+
+[dotfile_groups.direnv]
+root = "direnv"
+manifest = "git"
+
+[dotfile_groups.gh]
+root = "gh"
+manifest = "git"
+
+[dotfile_groups.ghostty]
+root = "ghostty"
+manifest = "git"
+
+[dotfile_groups.git]
+root = "git"
+manifest = "git"
+
+[dotfile_groups.graphite]
+root = "graphite"
+manifest = "git"
+
+[dotfile_groups.karabiner]
+root = "karabiner"
+manifest = "git"
+
+[dotfile_groups.lazygit]
+root = "lazygit"
+manifest = "git"
+
+[dotfile_groups.mise]
+root = "mise"
+manifest = "git"
+
+[dotfile_groups.npm]
+root = "npm"
+manifest = "git"
+
+[dotfile_groups.nvim]
+root = "nvim"
+manifest = "git"
+
+[dotfile_groups.pgcli]
+root = "pgcli"
+manifest = "git"
+
+[dotfile_groups.pnpm]
+root = "pnpm"
+manifest = "git"
+
+[dotfile_groups.readline]
+root = "readline"
+manifest = "git"
+
+[dotfile_groups.ripgrep]
+root = "ripgrep"
+manifest = "git"
+
+[dotfile_groups.starship]
+root = "starship"
+manifest = "git"
+
+[dotfile_groups.tmux]
+root = "tmux"
+manifest = "git"
+
+[dotfile_groups.tmuxinator]
+root = "tmuxinator"
+manifest = "git"
+
+[dotfile_groups.uv]
+root = "uv"
+manifest = "git"
+
+[dotfile_groups.zed]
+root = "zed"
+manifest = "git"
+
+[dotfile_groups.zsh]
+root = "zsh"
+manifest = "git"
+
+[dotfile_groups.zsh.entries]
+"~/.config/zsh/.zprezto" = { mode = "symlink" }  # submodule: link it whole, not file by file
