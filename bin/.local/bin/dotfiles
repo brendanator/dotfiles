@@ -161,12 +161,17 @@ cmd_status() {
   git -C "$DOTFILES" status
 }
 
-case "${1:-}" in
-  apply)        cmd_apply ;;
-  pull)         cmd_pull ;;
-  push)         cmd_push ;;
-  sync-remotes) shift; cmd_sync_remotes "$@" ;;
-  diff)         cmd_diff ;;
-  status)       cmd_status ;;
-  *)            usage ;;
-esac
+# Braces make bash parse to the final exit before running anything, so a pull
+# that rewrites this file can't make it run on from the middle of the new one.
+{
+  case "${1:-}" in
+    apply)        cmd_apply ;;
+    pull)         cmd_pull ;;
+    push)         cmd_push ;;
+    sync-remotes) shift; cmd_sync_remotes "$@" ;;
+    diff)         cmd_diff ;;
+    status)       cmd_status ;;
+    *)            usage ;;
+  esac
+  exit
+}
