@@ -56,3 +56,7 @@ export XSERVERRC=$XDG_CONFIG_HOME/X11/xserverrc
 if [[ "$SHLVL" -eq 1 && ! -o LOGIN && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprofile"
 fi
+
+# mise tools in non-interactive shells (ssh host cmd, scripts, cron): interactive
+# shells get them from `mise activate` in .zshrc; everything else uses the shims.
+[[ -o interactive ]] || export PATH="$XDG_DATA_HOME/mise/shims:$PATH"

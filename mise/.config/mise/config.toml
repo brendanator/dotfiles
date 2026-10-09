@@ -7,7 +7,8 @@ bat = "latest"
 btop = { version = "latest", os = ["linux"] }  # aqua ships no macOS build; brew keeps btop on the Mac
 "github:aldanial/cloc" = "v2.08"
 cargo-binstall = "latest"
-codex = "latest"
+claude = { version = "latest", auto_update = true, minimum_release_age = "1d" }  # updated hourly by the tool-update service below
+codex = { version = "latest", auto_update = true, minimum_release_age = "1d" }
 eza = "0.23.4"
 fnox = "latest"
 gh = "latest"
@@ -42,3 +43,9 @@ compile = false
 RUSTC_WRAPPER = "sccache"  # share rustc results across worktrees; each keeps its own target/
 PIPENV_VENV_IN_PROJECT = 0
 PYTHONPYCACHEPREFIX = "{{ xdg_cache_home }}/pycache{{ cwd }}"
+
+# Hourly background upgrades for tools with auto_update (claude, codex). Updating on
+# launch only happens through shims or `mise exec`, and `mise activate` runs the
+# installed binaries directly. Start it with `mise bootstrap services apply`.
+[bootstrap.services.mise-tool-update]
+builtin = "tool-update"
