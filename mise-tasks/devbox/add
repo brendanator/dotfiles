@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#MISE description="Add a devbox: lock it down in Hetzner, add it to the inventory, bootstrap it"
+#USAGE arg "<box>" help="Server name, the same in Hetzner and on the tailnet"
+#USAGE flag "--context <context>" required=#true help="hcloud context (Hetzner project) the server is in"
+#USAGE flag "--user <user>" help="ssh user on the box, with passwordless sudo (default: your user here)"
+#USAGE flag "--skip <parts>" help="Parts the bootstrap leaves out, as in mise bootstrap remote --skip"
+#USAGE flag "-n --dry-run" help="Change nothing: lockdown and bootstrap dry runs, and print the inventory entry"
+set -euo pipefail
+
+# For a box that has joined the tailnet (README: Devboxes). Each step is
+# idempotent, so running it again only bootstraps the box again.
+
+# shellcheck source=bootstrap/devbox/lib.sh
+source "$MISE_PROJECT_ROOT/bootstrap/devbox/lib.sh"
+
+INVENTORY="$MISE_PROJECT_ROOT/mise.local.toml"
+box="${usage_box:?}"
+context="${usage_context:?}"
+user="${usage_user:-$(id -un)}"
+dry_run="${usage_dry_run:-false}"
+n=()
+[ "$dry_run" = true ] && n=(--dry-run)
+
+echo "== Tailnet"
+command -v tailscale >/dev/null || { echo "No tailscale CLI here." >&2; exit 1; }
+dns="$(tailnet_dns_name "$box")"
+if [ -z "$dns" ]; then
+  echo "'$box' is not a peer on this tailnet. Join it first (README: Devboxes)." >&2
+  exit 1
+fi
+echo "$box is a peer: $dns"
+
+echo "== Hetzner lockdown"
+mise -C "$MISE_PROJECT_ROOT" run --quiet devbox:lockdown "$box" --context "$context" ${n[@]+"${n[@]}"}
+
+echo "== Inventory ($INVENTORY)"
+entry="$(printf '[bootstrap.remote.hosts.%s]\nhost = "%s"\nuser = "%s"\ntags = ["devbox", "hcloud:%s"]\nmise_env = ["devbox"]\ninstall_mise = true\n' \
+  "$box" "$dns" "$user" "$context")"
+listed="$(inventory "$INVENTORY" | awk -F'\t' -v b="$box" '$1 == b')"
+if [ -n "$listed" ]; then
+  if [ "$listed" != "$(printf '%s\t%s\t%s\t%s' "$box" "$dns" "$user" "$context")" ]; then
+    echo "$box is already listed, differently (name, host, user, context):" >&2
+    echo "  $listed" >&2
+    echo "Fix its entry in $INVENTORY, or drop it to have this one added:" >&2
+    printf '%s\n' "$entry" | sed 's/^/  /' >&2
+    exit 1
+  fi
+  echo "  already listed"
+elif [ "$dry_run" = true ]; then
+  echo "  would add:"
+  printf '%s\n' "$entry" | sed 's/^/    /'
+else
+  [ -s "$INVENTORY" ] && printf '\n' >>"$INVENTORY"
+  printf '%s\n' "$entry" >>"$INVENTORY"
+  echo "  added $box"
+fi
+
+echo "== Bootstrap"
+# The first run replaces the box's own ~/.bashrc and other default dotfiles.
+if [ -z "$listed" ] && [ "$dry_run" = true ]; then
+  target=(--host "$user@$dns" --remote-env devbox --install-mise)
+  # A dry run can't preview links into a ~/.dotfiles that the run clones first.
+  if ! ssh -o BatchMode=yes "$user@$dns" test -d .dotfiles; then
+    echo "No ~/.dotfiles on the box yet, so the dry run leaves out dotfiles."
+    n+=(--skip dotfiles)
+  fi
+else
+  mise trust --quiet "$INVENTORY"
+  target=("$box")
+fi
+mise -C "$MISE_PROJECT_ROOT" bootstrap remote "${target[@]}" --force-dotfiles ${usage_skip:+--skip "$usage_skip"} ${n[@]+"${n[@]}"}

@@ -9,6 +9,9 @@ set -euo pipefail
 # works because it dials out. It applies to every server in the project labelled
 # tailnet-only=true, so locking a box down is just labelling it. Idempotent.
 
+# shellcheck source=bootstrap/devbox/lib.sh
+source "$MISE_PROJECT_ROOT/bootstrap/devbox/lib.sh"
+
 FIREWALL=tailnet-only
 LABEL=tailnet-only=true
 server="${usage_server:?}"
@@ -34,18 +37,27 @@ if ! server_json="$(hc server describe "$server" -o json 2>/dev/null)"; then
   exit 1
 fi
 
-# Once the label is on, ssh works only over the tailnet: refuse unless the box is
-# on it, when this machine can tell.
-if command -v tailscale >/dev/null; then
-  if ! tailscale status --json | jq -e --arg h "$server" \
-      '[.Peer[] | .HostName] | index($h) != null' >/dev/null; then
-    echo "'$server' is not a peer on this tailnet. Join it first (README: Tailscale)," >&2
-    echo "or it will be unreachable once locked down." >&2
-    exit 1
+# The firewall covers every server labelled tailnet-only=true, so once it is
+# attached, each of them is reachable only over the tailnet. Refuse unless all of
+# them, and this server, are peers on it.
+command -v tailscale >/dev/null || {
+  echo "No tailscale CLI here, so the servers' tailnet membership can't be checked." >&2
+  exit 1
+}
+labelled="$(hc server list -l "$LABEL" -o noheader -o columns=name)"
+missing=""
+for s in $(printf '%s\n' "$server" "$labelled" | sort -u); do
+  if [ -n "$(tailnet_dns_name "$s")" ]; then
+    echo "Tailnet: $s is a peer"
+  else
+    echo "Tailnet: $s is NOT a peer" >&2
+    missing="$missing $s"
   fi
-  echo "Tailnet: $server is a peer"
-else
-  echo "Tailnet: no tailscale CLI here; make sure $server is on the tailnet."
+done
+if [ -n "$missing" ]; then
+  echo "Refusing: the firewall would cut off$missing." >&2
+  echo "Join them to the tailnet first (README: Devboxes)." >&2
+  exit 1
 fi
 
 echo "Firewall $FIREWALL:"

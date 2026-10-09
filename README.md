@@ -6,9 +6,8 @@ mise symlinks each file git tracks in it into place.
 
 ## New machine
 
-`mise bootstrap` sets a machine up from this repo and keeps it that way: run it
-again after any change. What it does beyond linking configs comes from the
-machine's module:
+`mise bootstrap` sets a machine up from this repo and keeps it that way. What it
+does beyond linking configs comes from the machine's module:
 
 - `mise.mac.toml`: Homebrew formulae and casks.
 - `mise.devbox.toml`: an Ubuntu 24.04 box reached only over Tailscale. It gets
@@ -25,60 +24,76 @@ git clone --recursive https://github.com/brendanator/dotfiles.git ~/.dotfiles
 ```
 
 `setup.sh` installs mise, saves the module (`mac` on macOS, `devbox` on Linux)
-in the gitignored `.miserc.local.toml`, and runs `mise bootstrap`. After that:
+in the gitignored `.miserc.local.toml`, and runs `mise bootstrap`. `dotfiles pull`
+keeps it current from then on.
 
-```bash
-cd ~/.dotfiles
-mise bootstrap plan      # packages, files, services, firewall it would change
-mise bootstrap --dry-run # everything, including links, shell and tools
-mise bootstrap           # apply
-mise bootstrap status
-```
+### Devboxes
 
-### Devbox
+Devboxes are set up and kept up from the Mac, over ssh. There can be any number
+of them, in any Hetzner projects. Each one has a single name, used for its
+Hetzner server, its tailnet host and its entry in the inventory: the Mac's
+gitignored `~/.dotfiles/mise.local.toml` (see `mise.local.toml.example`).
 
-Devboxes are bootstrapped from the Mac over ssh, and accept ssh only from the
-tailnet. For a new Ubuntu 24.04 box with a sudo user:
+To add a new Ubuntu 24.04 server with a sudo user:
 
-1. **Join the tailnet** (once). Over the public address, install Tailscale and
-   log in:
+1. **Join it to the tailnet.** This is the one manual step. Over the server's public address:
    ```bash
    ssh <user>@<public-ip>
    curl -fsSL https://tailscale.com/install.sh | sh
    sudo tailscale up   # open the printed URL to approve the box
    ```
-   From now on, use its MagicDNS name, `<box>.<tailnet>.ts.net`, also in
-   `~/.ssh/config`.
-2. **Lock it down**, so the internet can't reach it at all:
-   ```bash
-   mise run devbox:lockdown <hetzner-server> --context <hcloud-context> --dry-run
-   mise run devbox:lockdown <hetzner-server> --context <hcloud-context>
-   ```
-   This creates the Hetzner firewall `tailnet-only` in that project if it is
-   missing: no rules, applied to servers labelled `tailnet-only=true`. Then it
-   labels the server. It refuses if the server isn't a peer on your tailnet.
-   Running it again changes nothing.
-3. **Add it to the inventory** in the Mac's gitignored `~/.dotfiles/mise.local.toml`.
-   Start from `mise.local.toml.example`:
-   ```toml
-   [bootstrap.remote.hosts.<box>]
-   host = "<box>.<tailnet>.ts.net"
-   user = "<user>"
-   tags = ["devbox"]
-   ```
-4. **Bootstrap it.** The first run replaces the box's own `~/.bashrc` and other
-   default dotfiles, which is what `--force-dotfiles` allows:
+2. **Add it**, from the Mac:
    ```bash
    cd ~/.dotfiles
-   mise bootstrap remote <box> --dry-run
-   mise bootstrap remote <box> --force-dotfiles
+   mise run devbox:add <box> --context <hcloud-context> [--user <user>] --dry-run
+   mise run devbox:add <box> --context <hcloud-context> [--user <user>]
    ```
+   This:
+   - checks the box is a peer on your tailnet;
+   - locks it down (`devbox:lockdown`, below);
+   - adds it to the inventory;
+   - bootstraps it over its MagicDNS name. The first run replaces the box's own
+     `~/.bashrc` and other default dotfiles.
 
-The box's host firewall guards only ssh: port 22 accepts the tailnet
+   `--user` defaults to your user on the Mac. Every step is idempotent, so running it again
+   only bootstraps the box again.
+
+After that, these cover every box:
+
+```bash
+dotfiles sync-remotes    # push, then bootstrap every box in the inventory
+mise run devbox:status   # check them all, read-only
+```
+
+`devbox:status` prints one line per box:
+
+- **TAILNET:** whether it's a peer, and online.
+- **HETZNER:** whether it's labelled `tailnet-only=true` in the project its
+  `hcloud:<context>` tag names.
+- **BOOTSTRAP:** whether `mise bootstrap remote <box> --dry-run` finds it
+  converged. Otherwise it lists what would change.
+
+It exits 1 if any box needs attention. `--quick` skips the dry runs.
+
+#### Lockdown
+
+`mise run devbox:lockdown <server> --context <hcloud-context> [--dry-run]` closes a
+server to the internet. It creates the Hetzner firewall `tailnet-only` in that
+project if it's missing: no rules, applied to every server labelled
+`tailnet-only=true`. Then it labels the server. Tailscale still works, because it
+dials out.
+
+Because the firewall covers every labelled server in the project, the task first lists
+them all. It refuses unless each one, and the new server, is a peer on your
+tailnet. Running it again changes nothing.
+
+#### Host firewall
+
+A box's host firewall guards only ssh. Port 22 accepts the tailnet
 (`100.64.0.0/10`, `fd7a:115c:a1e0::/48`) and refuses everyone else, and every
 other port is left open. The Hetzner firewall is the main wall, and the only one
 that also covers ports Docker publishes, which skip the host's rules. Bootstrap
-devboxes over their tailnet names: a run over a public address finishes, but new
+devboxes over their tailnet names. A run over a public address finishes, but new
 ssh sessions to that address are refused afterwards.
 
 ## Packages
@@ -140,6 +155,6 @@ dotfiles sync-remotes  # push, then mise bootstrap remote --all
 `sync-remotes` bootstraps every box in `mise.local.toml`. Each box first
 fast-forwards its `~/.dotfiles` to `main`. Arguments go to
 `mise bootstrap remote` instead of `--all`, e.g.
-`dotfiles sync-remotes <box> --dry-run` (a dry run doesn't push).
+`dotfiles sync-remotes <box> --dry-run` or `--tag devbox` (a dry run doesn't push).
 A box whose `~/.dotfiles` has local changes fails without changing anything:
 run `dotfiles push` there first.
