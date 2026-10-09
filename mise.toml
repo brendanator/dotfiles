@@ -59,6 +59,12 @@ manifest = "git"
 root = "karabiner"
 manifest = "git"
 
+# Karabiner saves by writing a new file and renaming it over the old one, which
+# replaces a symlink to the file itself. Link the whole folder on macOS instead;
+# Linux boxes have no Karabiner and skip it.
+[dotfile_groups.karabiner.entries]
+"~/.config/karabiner" = { mode = "symlink", variants = [{ os = "macos", target = "~/.config/karabiner" }] }
+
 [dotfile_groups.lazygit]
 root = "lazygit"
 manifest = "git"

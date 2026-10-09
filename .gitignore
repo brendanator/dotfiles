@@ -30,3 +30,7 @@ docs/
 # Editor
 *.swp
 *~
+
+# Karabiner's own files in the linked ~/.config/karabiner folder
+/karabiner/.config/karabiner/*
+!/karabiner/.config/karabiner/karabiner.json

@@ -22,147 +22,464 @@
                         ]
                     },
                     {
-                        "description": "Ctrl + Left Click to Left Click",
+                        "description": "Holding Shift: Shift+Space is a newline until a letter is typed; then it is a space until Shift is released (pressing Shift resets it)",
                         "manipulators": [
                             {
                                 "from": {
+                                    "key_code": "left_shift",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "set_variable": { "name": "shift_typing", "value": 0 } }, { "key_code": "left_shift" }],
+                                "to_after_key_up": [{ "set_variable": { "name": "shift_typing", "value": 0 } }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "right_shift",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "set_variable": { "name": "shift_typing", "value": 0 } }, { "key_code": "right_shift" }],
+                                "to_after_key_up": [{ "set_variable": { "name": "shift_typing", "value": 0 } }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "a",
                                     "modifiers": {
-                                        "mandatory": ["left_control"],
+                                        "mandatory": ["shift"],
                                         "optional": ["caps_lock"]
-                                    },
-                                    "pointing_button": "button1"
+                                    }
                                 },
                                 "to": [
-                                    { "pointing_button": "button1" },
-                                    { "key_code": "left_control" }
-                                ],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Double Left Shift to Capslock",
-                        "manipulators": [
-                            {
-                                "conditions": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
                                     {
-                                        "name": "left_shift_pressed",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "left_shift",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "parameters": { "basic.to_if_alone_timeout_milliseconds": 500 },
-                                "to": [{ "key_code": "left_shift" }],
-                                "to_if_alone": [
-                                    { "key_code": "caps_lock" },
-                                    {
-                                        "set_variable": {
-                                            "name": "left_shift_pressed",
-                                            "value": 0
-                                        }
+                                        "key_code": "a",
+                                        "modifiers": ["left_shift"]
                                     }
                                 ],
                                 "type": "basic"
                             },
                             {
                                 "from": {
-                                    "key_code": "left_shift",
-                                    "modifiers": { "optional": ["any"] }
+                                    "key_code": "b",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
                                 },
-                                "parameters": {
-                                    "basic.to_delayed_action_delay_milliseconds": 500,
-                                    "basic.to_if_alone_timeout_milliseconds": 500
-                                },
-                                "to": [{ "key_code": "left_shift" }],
-                                "to_delayed_action": {
-                                    "to_if_canceled": [
-                                        {
-                                            "set_variable": {
-                                                "name": "left_shift_pressed",
-                                                "value": 0
-                                            }
-                                        }
-                                    ],
-                                    "to_if_invoked": [
-                                        {
-                                            "set_variable": {
-                                                "name": "left_shift_pressed",
-                                                "value": 0
-                                            }
-                                        }
-                                    ]
-                                },
-                                "to_if_alone": [
-                                    {
-                                        "set_variable": {
-                                            "name": "left_shift_pressed",
-                                            "value": 1
-                                        }
-                                    },
-                                    { "key_code": "left_shift" }
-                                ],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Change tab to hyper if pressed with other keys, to tab if pressed alone.",
-                        "manipulators": [
-                            {
-                                "from": { "key_code": "tab" },
                                 "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
                                     {
-                                        "set_variable": {
-                                            "name": "hyper_modifier",
-                                            "value": 1
-                                        }
+                                        "key_code": "b",
+                                        "modifiers": ["left_shift"]
                                     }
                                 ],
-                                "to_after_key_up": [
-                                    {
-                                        "set_variable": {
-                                            "name": "hyper_modifier",
-                                            "value": 0
-                                        }
-                                    }
-                                ],
-                                "to_if_alone": [{ "key_code": "tab" }],
                                 "type": "basic"
                             },
                             {
-                                "conditions": [
+                                "from": {
+                                    "key_code": "c",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
                                     {
-                                        "name": "hyper_modifier",
-                                        "type": "variable_if",
-                                        "value": 1
+                                        "key_code": "c",
+                                        "modifiers": ["left_shift"]
                                     }
                                 ],
-                                "from": { "key_code": "n" },
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "d",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
                                 "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "d",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "e",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "e",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "f",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "f",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "g",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "g",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "h",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "h",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "i",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "i",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "j",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "j",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "k",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "k",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "l",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "l",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "m",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "m",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "n",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
                                     {
                                         "key_code": "n",
-                                        "modifiers": ["left_command", "left_control", "left_option", "left_shift"]
+                                        "modifiers": ["left_shift"]
                                     }
                                 ],
                                 "type": "basic"
                             },
                             {
-                                "conditions": [
+                                "from": {
+                                    "key_code": "o",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
                                     {
-                                        "name": "hyper_modifier",
-                                        "type": "variable_if",
-                                        "value": 1
+                                        "key_code": "o",
+                                        "modifiers": ["left_shift"]
                                     }
                                 ],
-                                "from": { "key_code": "t" },
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "p",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
                                 "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "p",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "q",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "q",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "r",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "r",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "s",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "s",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "t",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
                                     {
                                         "key_code": "t",
-                                        "modifiers": ["left_command", "left_control", "left_option", "left_shift"]
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "u",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "u",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "v",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "v",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "w",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "w",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "x",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "x",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "y",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "y",
+                                        "modifiers": ["left_shift"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "z",
+                                    "modifiers": {
+                                        "mandatory": ["shift"],
+                                        "optional": ["caps_lock"]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "shift_typing", "value": 1 } },
+                                    {
+                                        "key_code": "z",
+                                        "modifiers": ["left_shift"]
                                     }
                                 ],
                                 "type": "basic"
@@ -200,6 +517,13 @@
                                 "type": "basic"
                             },
                             {
+                                "conditions": [
+                                    {
+                                        "name": "shift_typing",
+                                        "type": "variable_unless",
+                                        "value": 1
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "spacebar",
                                     "modifiers": { "mandatory": ["shift"] }
@@ -233,80 +557,8 @@
                         ]
                     },
                     {
-                        "description": "Change left_control+adf to alt/shift/ctrl keys",
+                        "description": "Change left_control+l to right arrow (outside editors and terminals)",
                         "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^org\\.vim\\.",
-                                            "^dev.zed.Zed",
-                                            "^com.googlecode.iterm2",
-                                            "ghostty",
-                                            "^com.todesktop.230313mzl4w4u92",
-                                            "^com.microsoft.VSCode"
-                                        ],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "a",
-                                    "modifiers": {
-                                        "mandatory": ["left_control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "modifiers": ["left_alt"] }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^org\\.vim\\.",
-                                            "^dev.zed.Zed",
-                                            "^com.googlecode.iterm2",
-                                            "ghostty",
-                                            "^com.todesktop.230313mzl4w4u92",
-                                            "^com.microsoft.VSCode"
-                                        ],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "d",
-                                    "modifiers": {
-                                        "mandatory": ["left_control"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "modifiers": ["left_shift"] }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^org\\.vim\\.",
-                                            "^dev.zed.Zed",
-                                            "^com.googlecode.iterm2",
-                                            "ghostty",
-                                            "^com.todesktop.230313mzl4w4u92",
-                                            "^com.microsoft.VSCode"
-                                        ],
-                                        "type": "frontmost_application_unless"
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "f",
-                                    "modifiers": {
-                                        "mandatory": ["left_command"],
-                                        "optional": ["any"]
-                                    }
-                                },
-                                "to": [{ "modifiers": ["left_control"] }],
-                                "type": "basic"
-                            },
                             {
                                 "conditions": [
                                     {
@@ -325,11 +577,19 @@
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": {
-                                        "mandatory": ["left_control"],
-                                        "optional": ["any"]
+                                        "mandatory": [
+                                            "left_control"
+                                        ],
+                                        "optional": [
+                                            "any"
+                                        ]
                                     }
                                 },
-                                "to": [{ "key_code": "right_arrow" }],
+                                "to": [
+                                    {
+                                        "key_code": "right_arrow"
+                                    }
+                                ],
                                 "type": "basic"
                             }
                         ]
@@ -435,19 +695,6 @@
                                     }
                                 },
                                 "to": [{ "key_code": "right_arrow" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Remap ctrl+click to click",
-                        "manipulators": [
-                            {
-                                "from": {
-                                    "modifiers": { "mandatory": ["left_control"] },
-                                    "pointing_button": "button1"
-                                },
-                                "to": [{ "pointing_button": "button1" }],
                                 "type": "basic"
                             }
                         ]
