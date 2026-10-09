@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+#MISE description="Show every devbox in the inventory: tailnet peer, Hetzner lockdown label, bootstrap converged"
+#USAGE arg "[host]..." var=#true help="Inventory hosts to check (default: all of them)"
+#USAGE flag "--quick" help="Skip the remote dry runs, so only the tailnet and Hetzner columns are checked"
+#USAGE flag "--skip <parts>" help="Parts the dry run leaves out, as in mise bootstrap remote --skip"
+set -euo pipefail
+
+# Read-only. Each host's BOOTSTRAP column comes from `mise bootstrap remote <host>
+# --dry-run`, which uploads this repo to a temp dir on the host and changes
+# nothing; hosts are checked in parallel. Exits 1 when any host needs attention.
+
+# shellcheck source=bootstrap/devbox/lib.sh
+source "$MISE_PROJECT_ROOT/bootstrap/devbox/lib.sh"
+
+INVENTORY="$MISE_PROJECT_ROOT/mise.local.toml"
+inv="$(inventory "$INVENTORY")"
+if [ -z "$inv" ]; then
+  echo "No hosts in $INVENTORY; add one with mise run devbox:add." >&2
+  exit 1
+fi
+# shellcheck disable=SC2154  # usage_host is set by mise from the #USAGE arg
+if [ -n "${usage_host:-}" ]; then
+  for h in $usage_host; do
+    cut -f1 <<<"$inv" | grep -qxF "$h" || { echo "No host '$h' in $INVENTORY." >&2; exit 1; }
+  done
+  inv="$(awk -F'\t' -v want=" $usage_host " 'index(want, " " $1 " ")' <<<"$inv")"
+fi
+
+logs="$(mktemp -d)"
+trap 'rm -rf "$logs"' EXIT
+
+if [ "${usage_quick:-false}" != true ]; then
+  while IFS=$'\t' read -r name _; do
+    mise -C "$MISE_PROJECT_ROOT" bootstrap remote "$name" --dry-run --yes \
+      ${usage_skip:+--skip "$usage_skip"} >"$logs/$name.log" 2>&1 </dev/null &
+    echo $! >"$logs/$name.pid"
+  done <<<"$inv"
+fi
+
+# What the dry run would change: everything after the host's mise version line
+# except section headers, traced commands, hooks (which run every time) and the
+# "already ..." reports.
+changes() {
+  awk '/^[0-9]{4}\.[0-9]+\.[0-9]+ (linux|macos)/ { on = 1; next } on' "$1" |
+    grep -Ev '^$|^mise (bootstrap: |\$ |remote bootstrap completed)|^sh -o errexit -c |^mise .*(already|all .*(applied|installed))' || true
+}
+
+bad=0
+printf '%-24s %-10s %-26s %s\n' HOST TAILNET HETZNER BOOTSTRAP
+while IFS=$'\t' read -r name _ _ context; do
+  if ! command -v tailscale >/dev/null; then
+    tailnet="unknown"
+  else
+    tailnet="$(tailnet_peers | awk -F'\t' -v n="$name" '$1 == n || index($2, n ".") == 1 { print $3; exit }')"
+    tailnet="${tailnet:-not-a-peer}"
+  fi
+  [ "$tailnet" = online ] || bad=1
+
+  if [ "$context" = - ]; then
+    hetzner="no hcloud: tag"
+  elif ! label="$(hcloud --context "$context" server describe "$name" -o json 2>/dev/null |
+                  jq -r '.labels["tailnet-only"] // "unlabelled"')"; then
+    hetzner="not found in $context"
+  elif [ "$label" = true ]; then
+    hetzner="locked ($context)"
+  else
+    hetzner="OPEN ($context)"
+  fi
+  [[ "$hetzner" == locked* ]] || bad=1
+
+  detail=""
+  if [ "${usage_quick:-false}" = true ]; then
+    bootstrap="-"
+  elif ! wait "$(cat "$logs/$name.pid")"; then
+    bootstrap="dry run failed"
+    detail="$(grep '^mise ERROR' "$logs/$name.log" | grep -Ev 'Version:|--verbose|failed on' | head -3)"
+    # A dry run can't link from a ~/.dotfiles the run would clone first.
+    grep -q 'sources do not exist' "$logs/$name.log" && bootstrap="not bootstrapped yet"
+    bad=1
+  else
+    detail="$(changes "$logs/$name.log")"
+    if [ -z "$detail" ]; then
+      bootstrap="converged"
+    else
+      bootstrap="$(wc -l <<<"$detail" | tr -d ' ') change(s)"
+      bad=1
+    fi
+  fi
+
+  printf '%-24s %-10s %-26s %s\n' "$name" "$tailnet" "$hetzner" "$bootstrap"
+  [ -z "$detail" ] || printf '%s\n' "$detail" | sed 's/^/    /'
+done <<<"$inv"
+
+exit "$bad"

@@ -1,0 +1,27 @@
+# The devbox inventory: mise.local.toml (gitignored) on the machine you run
+# remote bootstraps from. `mise run devbox:add <box> --context <hcloud-context>`
+# adds an entry like these; `dotfiles sync-remotes` bootstraps every one, and
+# `mise run devbox:status` checks them.
+# Docs: https://mise.jdx.dev/bootstrap/remote.html
+#
+# Each box has one name: its Hetzner server, its tailnet host and its table here.
+# host is its MagicDNS name, as devboxes accept ssh only from the tailnet. The
+# tag hcloud:<context> names the hcloud context (Hetzner project) it lives in.
+
+[bootstrap.remote.hosts.devbox-1]
+host = "devbox-1.your-tailnet.ts.net"
+user = "you"  # needs passwordless sudo
+tags = ["devbox", "hcloud:project-a"]
+mise_env = ["devbox"]  # loads mise.devbox.toml on the box
+install_mise = true    # keep mise at ~/.local/bin/mise, at this machine's version
+
+[bootstrap.remote.hosts.devbox-2]
+host = "devbox-2.your-tailnet.ts.net"
+user = "you"
+tags = ["devbox", "hcloud:project-b"]
+mise_env = ["devbox"]
+install_mise = true
+
+# This machine's own dotfile groups, if it should not link them all.
+# [bootstrap]
+# dotfile_groups = ["zsh", "git", "nvim"]

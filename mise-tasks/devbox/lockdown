@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+#MISE description="Close a Hetzner server to the internet: zero-rule firewall tailnet-only, applied by label"
+#USAGE arg "<server>" help="Hetzner server name"
+#USAGE flag "--context <context>" help="hcloud context (project); defaults to the active one"
+#USAGE flag "-n --dry-run" help="Print the hcloud writes instead of running them"
+set -euo pipefail
+
+# The firewall has no rules, so it drops every inbound packet; Tailscale still
+# works because it dials out. It applies to every server in the project labelled
+# tailnet-only=true, so locking a box down is just labelling it. Idempotent.
+
+# shellcheck source=bootstrap/devbox/lib.sh
+source "$MISE_PROJECT_ROOT/bootstrap/devbox/lib.sh"
+
+FIREWALL=tailnet-only
+LABEL=tailnet-only=true
+server="${usage_server:?}"
+dry_run="${usage_dry_run:-false}"
+
+hc() { hcloud ${usage_context:+--context "$usage_context"} "$@"; }
+
+# Run a write, or under --dry-run only print it.
+write() {
+  if [ "$dry_run" = true ]; then
+    echo "  would run: hcloud ${usage_context:+--context $usage_context }$*"
+  else
+    hc "$@" >/dev/null
+    echo "  done: hcloud $*"
+  fi
+}
+
+context="${usage_context:-$(hcloud context active)}"
+echo "Project (hcloud context): $context"
+
+if ! server_json="$(hc server describe "$server" -o json 2>/dev/null)"; then
+  echo "No server '$server' in $context." >&2
+  exit 1
+fi
+
+# The firewall covers every server labelled tailnet-only=true, so once it is
+# attached, each of them is reachable only over the tailnet. Refuse unless all of
+# them, and this server, are peers on it.
+command -v tailscale >/dev/null || {
+  echo "No tailscale CLI here, so the servers' tailnet membership can't be checked." >&2
+  exit 1
+}
+labelled="$(hc server list -l "$LABEL" -o noheader -o columns=name)"
+missing=""
+for s in $(printf '%s\n' "$server" "$labelled" | sort -u); do
+  if [ -n "$(tailnet_dns_name "$s")" ]; then
+    echo "Tailnet: $s is a peer"
+  else
+    echo "Tailnet: $s is NOT a peer" >&2
+    missing="$missing $s"
+  fi
+done
+if [ -n "$missing" ]; then
+  echo "Refusing: the firewall would cut off$missing." >&2
+  echo "Join them to the tailnet first (README: Devboxes)." >&2
+  exit 1
+fi
+
+echo "Firewall $FIREWALL:"
+if fw_json="$(hc firewall describe "$FIREWALL" -o json 2>/dev/null)"; then
+  rules="$(jq '.rules | length' <<<"$fw_json")"
+  if [ "$rules" != 0 ]; then
+    echo "  has $rules rules; expected none. Not touching it." >&2
+    exit 1
+  fi
+  echo "  exists, no rules"
+else
+  write firewall create --name "$FIREWALL" --label "purpose=$FIREWALL"
+  fw_json='{"applied_to": []}'
+fi
+
+if jq -e --arg s "$LABEL" \
+    '[.applied_to[] | select(.type == "label_selector") | .label_selector.selector] | index($s) != null' \
+    <<<"$fw_json" >/dev/null; then
+  echo "  applies to label $LABEL"
+else
+  write firewall apply-to-resource "$FIREWALL" --type label_selector --label-selector "$LABEL"
+fi
+
+echo "Server $server:"
+if [ "$(jq -r '.labels["tailnet-only"] // ""' <<<"$server_json")" = true ]; then
+  echo "  already labelled $LABEL"
+else
+  write server add-label --overwrite "$server" "$LABEL"
+fi
+
+if [ "$dry_run" = true ]; then
+  echo "Dry run: nothing changed."
+else
+  echo "$server is closed to the internet; reach it over the tailnet."
+fi

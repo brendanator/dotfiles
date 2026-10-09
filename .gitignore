@@ -18,11 +18,10 @@
 # State
 .state/
 
-# Per-machine ssh hosts for `dotfiles sync-remotes`
-/remotes
-
-# Per-machine mise overrides, e.g. which dotfile groups to link
+# Per-machine mise choices: the module (env), dotfile groups, the box inventory
+/.miserc.local.toml
 /mise.local.toml
+!/mise.local.toml.example
 
 # Local docs/plans (not dotfiles)
 docs/

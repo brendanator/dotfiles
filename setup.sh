@@ -1,41 +1,23 @@
 #!/usr/bin/env bash
+# Set up this machine from the repo: ./setup.sh [mac|devbox] [mise bootstrap args]
+# The module defaults to mac on macOS and devbox on Linux, and is saved in
+# .miserc.local.toml so a plain `mise bootstrap` here picks it up later.
 set -euo pipefail
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
-export DOTFILES  # read by the dotfiles script
-
-echo "Installing dotfiles from $DOTFILES"
-
-# Install mise
-if ! command -v mise &>/dev/null; then
-  echo "Installing mise..."
-  curl https://mise.run | sh
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-
-# Install zsh
-if [[ "$(uname)" == "Darwin" ]]; then
-  command -v zsh &>/dev/null || brew install zsh
-else
-  command -v zsh &>/dev/null || sudo apt-get install -y zsh
-fi
-
-# Init submodules (prezto)
 cd "$DOTFILES"
+
+case "${1:-}" in
+  mac|devbox) env="$1"; shift ;;
+  *) env="$([ "$(uname)" = Darwin ] && echo mac || echo devbox)" ;;
+esac
+echo "env = [\"$env\"]" > .miserc.local.toml
+
+command -v mise >/dev/null || curl -fsSL https://mise.run | sh
+export PATH="$HOME/.local/bin:$PATH"
+
 git submodule update --init --recursive
+mise trust --quiet "$DOTFILES/mise.toml"
+mise bootstrap "$@"
 
-# Link the configs (groups in mise.toml).
-echo "Linking configs via mise..."
-"$DOTFILES/bin/.local/bin/dotfiles" apply
-
-# Install mise tools (from the global config just linked)
-echo "Installing tools via mise..."
-mise install
-
-# Set zsh as default shell
-if [[ "$SHELL" != */zsh ]]; then
-  echo "Changing default shell to zsh..."
-  chsh -s "$(which zsh)"
-fi
-
-echo "Done. Open a new terminal to verify."
+echo "Done. Open a new terminal to pick up the login shell and links."
