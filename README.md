@@ -74,11 +74,12 @@ tailnet. For a new Ubuntu 24.04 box with a sudo user:
    mise bootstrap remote <box> --force-dotfiles
    ```
 
-The box's host firewall denies everything incoming except ssh from the tailnet
-and Tailscale's WireGuard port. It is a second layer: the Hetzner firewall is
-what also covers ports Docker publishes, which skip the host's rules. mise
-refuses to apply it over an ssh session that the rules wouldn't allow, so
-bootstrap devboxes over their tailnet names.
+The box's host firewall guards only ssh: port 22 accepts the tailnet
+(`100.64.0.0/10`, `fd7a:115c:a1e0::/48`) and refuses everyone else, and every
+other port is left open. The Hetzner firewall is the main wall, and the only one
+that also covers ports Docker publishes, which skip the host's rules. Bootstrap
+devboxes over their tailnet names: a run over a public address finishes, but new
+ssh sessions to that address are refused afterwards.
 
 ## Packages
 

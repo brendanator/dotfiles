@@ -57,14 +57,17 @@ phase = "pre-packages"
 state = "running"
 enabled = true
 
-# Second layer behind the Hetzner firewall `tailnet-only` (`mise run devbox:lockdown`),
-# which is what stops Docker's published ports: Docker forwards those past these
-# rules. mise refuses a deny policy unless a rule covers the ssh session it runs
-# in, so runs must arrive over the tailnet.
+# Guards ssh only: tcp 22 is accepted from the tailnet and rejected from anywhere
+# else; every other port stays open on the host. The Hetzner firewall
+# `tailnet-only` (`mise run devbox:lockdown`) is the main wall, and the only one
+# Docker's published ports respect. nftables applies the rules in order, so the
+# tailnet allows come before the catch-all reject. mise's lockout guard only
+# checks deny/reject policies, so it doesn't run here: a run over a public address
+# keeps its own session (established connections are accepted) but no new ones.
 # Docs: https://mise.jdx.dev/bootstrap/firewall.html
 [bootstrap.linux.firewall]
 backend = "nftables"
-default_incoming = "deny"
+default_incoming = "allow"
 default_outgoing = "allow"
 
 [[bootstrap.linux.firewall.rules]]
@@ -80,6 +83,7 @@ port = 22
 source = "fd7a:115c:a1e0::/48"  # Tailscale's IPv6 range; MagicDNS names resolve to both
 
 [[bootstrap.linux.firewall.rules]]
-name = "tailscale-wireguard"
-protocol = "udp"
-port = 41641  # direct peer connections; without it traffic still flows, via DERP relays
+name = "ssh-reject-others"
+action = "reject"
+protocol = "tcp"
+port = 22
